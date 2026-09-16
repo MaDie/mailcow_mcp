@@ -52,7 +52,7 @@ export class ListDKIMKeysTool extends BaseTool {
       },
       created_before: {
         type: 'string' as const,
-        description: 'Filter by creation date (before this date)', 
+        description: 'Filter by creation date (before this date)',
         format: 'date-time',
       },
       limit: {
@@ -133,7 +133,7 @@ export class ListDKIMKeysTool extends BaseTool {
 
       // Apply client-side filtering if needed
       let filteredKeys = keys;
-      
+
       if (active_only && !params.active) {
         filteredKeys = filteredKeys.filter(key => key.active);
       }
