@@ -2,6 +2,7 @@ export * from './client';
 export * from './domains';
 export * from './mailboxes';
 export * from './aliases';
+export * from './filters';
 export * from './users';
 export * from './dkim';
 export * from './quarantine';

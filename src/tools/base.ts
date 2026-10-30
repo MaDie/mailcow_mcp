@@ -110,6 +110,47 @@ export abstract class BaseTool implements Tool {
     );
   }
 
+  protected permissionDenied(message: string): ToolHandlerResult {
+    return {
+      success: false,
+      error: {
+        code: MCPErrorCode.AUTHORIZATION_ERROR,
+        message,
+      },
+    };
+  }
+
+  protected invalidParams(message: string): ToolHandlerResult {
+    return {
+      success: false,
+      error: {
+        code: MCPErrorCode.INVALID_PARAMS,
+        message,
+      },
+    };
+  }
+
+  protected notFound(message: string): ToolHandlerResult {
+    return {
+      success: false,
+      error: {
+        code: MCPErrorCode.RESOURCE_NOT_FOUND,
+        message,
+      },
+    };
+  }
+
+  protected requireAccess(
+    context: ToolContext,
+    permissions: string[],
+    message: string
+  ): ToolHandlerResult | null {
+    if (!this.validatePermissions(context, permissions)) {
+      return this.permissionDenied(message);
+    }
+    return null;
+  }
+
   /**
    * Create a successful tool result
    */

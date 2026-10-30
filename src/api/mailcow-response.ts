@@ -61,6 +61,58 @@ export function isMailcowFailureType(type: string | undefined): boolean {
  * Throw when Mailcow reports type `danger` or `error`.
  * Non-action payloads (domain lists, mailbox objects, DKIM keys) are ignored.
  */
+/** Mailcow stores booleans as "1" / "0". `intval(undefined)` is 0, so omitted `active` creates inactive rows. */
+export function toMailcowFlag(value: boolean | number | string | undefined, defaultValue = true): '1' | '0' {
+  if (value === undefined || value === null) {
+    return defaultValue ? '1' : '0';
+  }
+  if (value === true || value === 1 || value === '1') {
+    return '1';
+  }
+  if (value === false || value === 0 || value === '0') {
+    return '0';
+  }
+  return defaultValue ? '1' : '0';
+}
+
+export function fromMailcowFlag(value: unknown): boolean {
+  return value === true || value === 1 || value === '1';
+}
+
+export function actionMessageParts(item: MailcowActionItem | undefined): string[] {
+  if (!item) {
+    return [];
+  }
+  return Array.isArray(item.msg) ? item.msg.map(String) : item.msg ? [String(item.msg)] : [];
+}
+
+export function findActionMessage(
+  data: unknown,
+  code: string
+): string[] | null {
+  const items = extractMailcowActionItems(data) ?? [];
+  for (const item of items) {
+    const parts = actionMessageParts(item);
+    if (parts[0] === code) {
+      return parts;
+    }
+  }
+  return null;
+}
+
+export function asObjectList<T>(response: unknown): T[] {
+  if (Array.isArray(response)) {
+    return response as T[];
+  }
+  if (!response || typeof response !== 'object') {
+    return [];
+  }
+  if (Object.keys(response as object).length === 0) {
+    return [];
+  }
+  return [response as T];
+}
+
 export function assertMailcowSuccess(data: unknown): void {
   const items = extractMailcowActionItems(data);
   if (!items) {

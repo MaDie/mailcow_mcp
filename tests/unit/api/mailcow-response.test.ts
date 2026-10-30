@@ -1,10 +1,13 @@
 import {
   assertMailcowSuccess,
   extractMailcowActionItems,
+  findActionMessage,
   formatMailcowMessage,
+  fromMailcowFlag,
   isMailcowActionItem,
   isMailcowFailureType,
   MailcowAPIError,
+  toMailcowFlag,
 } from '../../../src/api/mailcow-response';
 
 describe('Mailcow action responses', () => {
@@ -74,5 +77,25 @@ describe('Mailcow action responses', () => {
     expect(() =>
       assertMailcowSuccess({ type: 'error', msg: 'permission denied' })
     ).toThrow(/Mailcow API error: permission denied/);
+  });
+
+  it('maps Mailcow 1/0 flags and defaults omitted active to 1', () => {
+    expect(toMailcowFlag(undefined)).toBe('1');
+    expect(toMailcowFlag(false)).toBe('0');
+    expect(toMailcowFlag(true)).toBe('1');
+    expect(fromMailcowFlag('1')).toBe(true);
+    expect(fromMailcowFlag(0)).toBe(false);
+  });
+
+  it('finds alias_added in action arrays', () => {
+    expect(
+      findActionMessage(
+        [{ type: 'success', msg: ['alias_added', 'a@b.com', '9'] }],
+        'alias_added'
+      )
+    ).toEqual(['alias_added', 'a@b.com', '9']);
+    expect(
+      findActionMessage([{ type: 'success', msg: ['mailbox_modified'] }], 'alias_added')
+    ).toBeNull();
   });
 });

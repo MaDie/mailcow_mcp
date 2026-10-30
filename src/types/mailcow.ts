@@ -100,8 +100,11 @@ export interface MailcowAlias {
   goto: string;
   domain: string;
   active: boolean;
-  created: Date;
-  modified: Date;
+  sogo_visible?: boolean;
+  public_comment?: string;
+  private_comment?: string;
+  created: Date | string;
+  modified: Date | string | null;
   attributes?: Record<string, unknown>;
 }
 
@@ -109,11 +112,50 @@ export interface CreateAliasRequest {
   address: string;
   goto: string;
   active?: boolean;
+  sogo_visible?: boolean;
+  public_comment?: string;
+  private_comment?: string;
+  goto_null?: boolean;
+  goto_spam?: boolean;
+  goto_ham?: boolean;
 }
 
 export interface UpdateAliasRequest {
+  address?: string;
   goto?: string;
   active?: boolean;
+  sogo_visible?: boolean;
+  public_comment?: string;
+  private_comment?: string;
+}
+
+// Sieve filter Types
+export interface MailcowSieveFilter {
+  id: number;
+  username: string;
+  script_desc: string;
+  script_data: string;
+  filter_type: 'prefilter' | 'postfilter';
+  active: boolean;
+}
+
+export interface CreateSieveFilterRequest {
+  username: string;
+  script_desc: string;
+  script_data: string;
+  filter_type?: 'prefilter' | 'postfilter';
+  active?: boolean;
+}
+
+export interface UpdateSieveFilterRequest {
+  script_desc?: string;
+  script_data?: string;
+  filter_type?: 'prefilter' | 'postfilter';
+  active?: boolean;
+}
+
+export interface ListSieveFilterParams {
+  username?: string;
 }
 
 // User Types

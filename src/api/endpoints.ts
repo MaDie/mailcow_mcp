@@ -27,11 +27,20 @@ export const API_ENDPOINTS = {
 
   // Alias endpoints
   ALIASES: {
-    LIST: '/api/v1/get/alias',
+    LIST: '/api/v1/get/alias/all',
     CREATE: '/api/v1/add/alias',
     UPDATE: '/api/v1/edit/alias',
     DELETE: '/api/v1/delete/alias',
     GET: '/api/v1/get/alias',
+  },
+
+  // Sieve filter endpoints
+  FILTERS: {
+    LIST: '/api/v1/get/filters/all',
+    GET: '/api/v1/get/filters',
+    CREATE: '/api/v1/add/filter',
+    UPDATE: '/api/v1/edit/filter',
+    DELETE: '/api/v1/delete/filter',
   },
 
   // User endpoints
@@ -183,7 +192,8 @@ export function buildAliasEndpoint(
     | APIAction.CREATE
     | APIAction.UPDATE
     | APIAction.DELETE
-    | APIAction.GET
+    | APIAction.GET,
+  resourceId?: string
 ): string {
   switch (action) {
     case APIAction.LIST:
@@ -195,9 +205,34 @@ export function buildAliasEndpoint(
     case APIAction.DELETE:
       return API_ENDPOINTS.ALIASES.DELETE;
     case APIAction.GET:
-      return API_ENDPOINTS.ALIASES.GET;
+      return withResource(API_ENDPOINTS.ALIASES.GET, resourceId);
     default:
       throw new Error(`Unknown alias action: ${action}`);
+  }
+}
+
+export function buildFilterEndpoint(
+  action:
+    | APIAction.LIST
+    | APIAction.GET
+    | APIAction.CREATE
+    | APIAction.UPDATE
+    | APIAction.DELETE,
+  resourceId?: string
+): string {
+  switch (action) {
+    case APIAction.LIST:
+      return API_ENDPOINTS.FILTERS.LIST;
+    case APIAction.GET:
+      return withResource(API_ENDPOINTS.FILTERS.GET, resourceId);
+    case APIAction.CREATE:
+      return API_ENDPOINTS.FILTERS.CREATE;
+    case APIAction.UPDATE:
+      return API_ENDPOINTS.FILTERS.UPDATE;
+    case APIAction.DELETE:
+      return API_ENDPOINTS.FILTERS.DELETE;
+    default:
+      throw new Error(`Unknown filter action: ${action}`);
   }
 }
 

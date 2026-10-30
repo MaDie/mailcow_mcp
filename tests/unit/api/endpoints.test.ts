@@ -2,6 +2,8 @@ import {
   buildDomainEndpoint,
   buildMailboxEndpoint,
   buildDKIMEndpoint,
+  buildAliasEndpoint,
+  buildFilterEndpoint,
 } from '../../../src/api/endpoints';
 import { APIAction } from '../../../src/types/api';
 
@@ -24,6 +26,13 @@ describe('endpoint builder GET actions', () => {
     expect(buildDKIMEndpoint(APIAction.GET, 'example.com')).toBe(
       '/api/v1/get/dkim/example.com'
     );
+  });
+
+  it('builds alias list/get and filter endpoints', () => {
+    expect(buildAliasEndpoint(APIAction.LIST)).toBe('/api/v1/get/alias/all');
+    expect(buildAliasEndpoint(APIAction.GET, '6')).toBe('/api/v1/get/alias/6');
+    expect(buildFilterEndpoint(APIAction.LIST)).toBe('/api/v1/get/filters/all');
+    expect(buildFilterEndpoint(APIAction.CREATE)).toBe('/api/v1/add/filter');
   });
 
   it('keeps list/create/update/delete paths', () => {
