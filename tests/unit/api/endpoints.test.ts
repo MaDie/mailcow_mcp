@@ -1,4 +1,5 @@
 import {
+  API_ENDPOINTS,
   buildDomainEndpoint,
   buildMailboxEndpoint,
   buildDKIMEndpoint,
@@ -39,5 +40,9 @@ describe('endpoint builder GET actions', () => {
     expect(buildDomainEndpoint(APIAction.LIST)).toBe('/api/v1/get/domain/all');
     expect(buildMailboxEndpoint(APIAction.CREATE)).toBe('/api/v1/add/mailbox');
     expect(buildDKIMEndpoint(APIAction.DELETE)).toBe('/api/v1/delete/dkim');
+  });
+
+  it('exposes the Mailcow status version endpoint', () => {
+    expect(API_ENDPOINTS.STATUS.VERSION).toBe('/api/v1/get/status/version');
   });
 });

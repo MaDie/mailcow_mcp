@@ -48,10 +48,11 @@ npm run build && npm start
 - **Sync Jobs** (7): Manage email migration and synchronization
 - **Log Analysis** (4): System, error, performance, and access logs
 
-### System Tools (3 tools)
-- **Health Check**: Server status and metrics
-- **Configuration**: Current settings (sanitized)
+### System Tools (4 tools)
+- **Health Check**: Server status, MCP version, tested Mailcow release
+- **Configuration**: Current settings (sanitized) plus versioning
 - **API Test**: Validate Mailcow connectivity
+- **Mailcow Version**: Connected instance version (`/api/v1/get/status/version`) and mismatch warning
 
 ## 📊 Current Status
 
@@ -116,10 +117,27 @@ npm run build && npm start
 | **[API Reference](docs/API_REFERENCE.md)** | Complete tool documentation |
 | **[Configuration](docs/CONFIGURATION.md)** | Environment setup guide |
 | **[Testing Guide](docs/TESTING.md)** | Testing framework and practices |
+| **[Compatibility](COMPATIBILITY.md)** | Mailcow release matrix (source-verified) |
+| **[Changelog](CHANGELOG.md)** | Released versions |
 
 ### Developer Resources
 - **[CLAUDE.md](CLAUDE.md)** - Essential context for Claude Code sessions
 - **[Team Structure](docs/TEAM_STRUCTURE.md)** - Parallel development workflow  
+
+## Versioning
+
+This package uses **`YYYY.MM.PATCH`**, not a conventional `0.x` semver line.
+
+| Part | Meaning |
+|------|---------|
+| `YYYY.MM` | Newest [mailcow-dockerized](https://github.com/mailcow/mailcow-dockerized) monthly release this build was **source-verified** against |
+| `PATCH` | MCP-only fixes or docs that do not move the Mailcow target |
+
+Mailcow tags look like `2026-09` or `2026-09a`. [npm semver](https://docs.npmjs.com/about-semantic-versioning) **rejects a leading zero** in a numeric component, so `2026.09.0` is not a valid npm version. The month is therefore unpadded: Mailcow `2026-09` → npm **`2026.9.0`**. Letter suffixes (`2026-09a`) stay on the same `YYYY.MM` line; they do not get their own package version unless the API this server uses actually changes.
+
+The MCP server advertises that version in its protocol `serverInfo`, in `health_check` / `get_config`, and via `get_mailcow_version`. The last tool also calls Mailcow `GET /api/v1/get/status/version` (admin API key, Mailcow ≥ 2022-05) and warns when the connected host is not the tested `YYYY-MM`.
+
+See [COMPATIBILITY.md](COMPATIBILITY.md) for the release matrix. No compared Mailcow tag is fully supported; several registered tools call routes Mailcow has never exposed.
 
 ## 🔧 Development
 
