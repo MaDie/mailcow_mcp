@@ -365,6 +365,24 @@ describe('Mailbox Management Tools', () => {
       });
     });
 
+    it('should report the mailbox name when the API omits username', async () => {
+      (mailboxAPI.createMailbox as jest.Mock).mockResolvedValue({
+        domain: 'example.com',
+        local_part: 'new',
+      });
+
+      const result = await tool.execute({
+        local_part: 'new',
+        domain: 'example.com',
+        password: 'securepassword123',
+      }, context);
+
+      expect(result.success).toBe(true);
+      const data = JSON.parse((result.result!.content[0] as any).text);
+      expect(data.message).toContain('new@example.com');
+      expect(data.message).not.toContain('undefined');
+    });
+
     it('should validate required string parameters', async () => {
       const input = {
         local_part: 123,

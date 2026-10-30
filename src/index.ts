@@ -225,6 +225,9 @@ class MailcowMCPServer {
         'syncjobs:read', 'syncjobs:write', 'syncjobs:delete',
         // Log permissions
         'logs:read',
+        'dkim:read', 'dkim:write', 'dkim:delete',
+        'aliases:read', 'aliases:write',
+        'users:read', 'users:write', 'users:delete',
         // Email permissions
         'email:send', 'email:read'
       ], // Based on API key capabilities

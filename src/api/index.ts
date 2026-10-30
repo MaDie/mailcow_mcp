@@ -16,4 +16,5 @@ export * from './system';
 export * from './syncjobs';
 export * from './queues';
 export * from './errors';
-export * from './endpoints'; 
+export * from './endpoints';
+export * from './mailcow-response'; 

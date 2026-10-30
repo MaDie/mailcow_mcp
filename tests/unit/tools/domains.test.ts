@@ -302,6 +302,22 @@ describe('Domain Management Tools (Fixed)', () => {
       });
     });
 
+    it('should report the domain name when the API only returns domain_name', async () => {
+      (domainAPI.createDomain as jest.Mock).mockResolvedValue({
+        domain_name: 'named.com',
+        description: 'From Mailcow',
+        active: 1,
+      });
+
+      const result = await tool.execute({ domain: 'named.com' }, context);
+
+      expect(result.success).toBe(true);
+      const data = JSON.parse((result.result!.content[0] as any).text);
+      expect(data.message).toContain('named.com');
+      expect(data.message).not.toContain('undefined');
+      expect(data.domain.domain).toBe('named.com');
+    });
+
     it('should validate quota relationship', async () => {
       const input = {
         domain: 'invalid.com',

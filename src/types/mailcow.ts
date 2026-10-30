@@ -81,6 +81,7 @@ export interface CreateMailboxRequest {
   domain: string;
   quota: number;
   password: string;
+  password2?: string;
   name?: string;
   active?: boolean;
 }
@@ -158,6 +159,8 @@ export interface MailcowDKIM {
   active: boolean;
   created: Date;
   modified: Date;
+  /** Raw Mailcow TXT value (`v=DKIM1;k=rsa;p=...`), if the API provided one */
+  dkim_txt?: string;
 }
 
 export interface CreateDKIMRequest {

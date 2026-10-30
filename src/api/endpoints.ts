@@ -10,6 +10,7 @@ export const API_ENDPOINTS = {
   // Domain endpoints
   DOMAINS: {
     LIST: '/api/v1/get/domain/all',
+    GET: '/api/v1/get/domain',
     CREATE: '/api/v1/add/domain',
     UPDATE: '/api/v1/edit/domain',
     DELETE: '/api/v1/delete/domain',
@@ -18,6 +19,7 @@ export const API_ENDPOINTS = {
   // Mailbox endpoints
   MAILBOXES: {
     LIST: '/api/v1/get/mailbox/all',
+    GET: '/api/v1/get/mailbox',
     CREATE: '/api/v1/add/mailbox',
     UPDATE: '/api/v1/edit/mailbox',
     DELETE: '/api/v1/delete/mailbox',
@@ -43,6 +45,7 @@ export const API_ENDPOINTS = {
   // DKIM endpoints
   DKIM: {
     LIST: '/api/v1/get/dkim',
+    GET: '/api/v1/get/dkim',
     CREATE: '/api/v1/add/dkim',
     UPDATE: '/api/v1/edit/dkim',
     DELETE: '/api/v1/delete/dkim',
@@ -135,11 +138,17 @@ export const API_ENDPOINTS = {
   },
 };
 
+function withResource(base: string, resourceId?: string): string {
+  return resourceId ? `${base}/${encodeURIComponent(resourceId)}` : base;
+}
+
 // Helper functions for building endpoint URLs
-export function buildDomainEndpoint(action: APIAction): string {
+export function buildDomainEndpoint(action: APIAction, resourceId?: string): string {
   switch (action) {
     case APIAction.LIST:
       return API_ENDPOINTS.DOMAINS.LIST;
+    case APIAction.GET:
+      return withResource(API_ENDPOINTS.DOMAINS.GET, resourceId);
     case APIAction.CREATE:
       return API_ENDPOINTS.DOMAINS.CREATE;
     case APIAction.UPDATE:
@@ -151,10 +160,12 @@ export function buildDomainEndpoint(action: APIAction): string {
   }
 }
 
-export function buildMailboxEndpoint(action: APIAction): string {
+export function buildMailboxEndpoint(action: APIAction, resourceId?: string): string {
   switch (action) {
     case APIAction.LIST:
       return API_ENDPOINTS.MAILBOXES.LIST;
+    case APIAction.GET:
+      return withResource(API_ENDPOINTS.MAILBOXES.GET, resourceId);
     case APIAction.CREATE:
       return API_ENDPOINTS.MAILBOXES.CREATE;
     case APIAction.UPDATE:
@@ -215,13 +226,17 @@ export function buildUserEndpoint(
 export function buildDKIMEndpoint(
   action:
     | APIAction.LIST
+    | APIAction.GET
     | APIAction.CREATE
     | APIAction.UPDATE
-    | APIAction.DELETE
+    | APIAction.DELETE,
+  resourceId?: string
 ): string {
   switch (action) {
     case APIAction.LIST:
       return API_ENDPOINTS.DKIM.LIST;
+    case APIAction.GET:
+      return withResource(API_ENDPOINTS.DKIM.GET, resourceId);
     case APIAction.CREATE:
       return API_ENDPOINTS.DKIM.CREATE;
     case APIAction.UPDATE:
