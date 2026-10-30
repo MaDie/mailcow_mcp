@@ -18,7 +18,7 @@ Get server health status and basic metrics.
   "timestamp": "2023-12-07T10:30:00.000Z",
   "server": {
     "name": "mailcow-mcp",
-    "version": "2026.9.1",
+    "version": "2026.9.2",
     "versioning_scheme": "YYYY.MM.PATCH",
     "tested_mailcow": "2026-09",
     "uptime": 3600
@@ -67,7 +67,7 @@ Report this MCP package version, the Mailcow release it was source-verified agai
 {
   "mcp": {
     "name": "mailcow-mcp",
-    "version": "2026.9.1",
+    "version": "2026.9.2",
     "versioning_scheme": "YYYY.MM.PATCH",
     "tested_mailcow": "2026-09"
   },
@@ -291,10 +291,11 @@ Put a queue item on hold (prevent delivery attempts).
 - `item_id` (string, required): Queue item ID
 
 #### `release_queue_item`
-Release a queue item from hold (allow delivery attempts).
+Release a held queue item (Mailcow action `unhold`). Requires confirmation.
 
 **Parameters:**
 - `item_id` (string, required): Queue item ID
+- `confirm` (boolean, required): Must be `true` to confirm
 
 ---
 

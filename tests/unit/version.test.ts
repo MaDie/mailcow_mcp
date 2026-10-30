@@ -13,14 +13,14 @@ const packageJsonVersion: string = require('../../package.json').version;
 describe('Mailcow-aligned versioning', () => {
   it('keeps package.json in sync with the version module', () => {
     expect(MCP_PACKAGE_VERSION).toBe(packageJsonVersion);
-    expect(MCP_PACKAGE_VERSION).toBe('2026.9.1');
+    expect(MCP_PACKAGE_VERSION).toBe('2026.9.2');
     expect(TESTED_MAILCOW_RELEASE).toBe('2026-09');
   });
 
   it('exposes scheme metadata for server info', () => {
     expect(mcpVersionInfo()).toEqual({
       name: 'mailcow-mcp',
-      version: '2026.9.1',
+      version: '2026.9.2',
       versioning_scheme: 'YYYY.MM.PATCH',
       tested_mailcow: '2026-09',
     });

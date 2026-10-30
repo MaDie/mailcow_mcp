@@ -1,15 +1,15 @@
 import { APIClient } from '../client';
 import { MailcowQueueItem, ListQueueParams, APIAction } from '../../types';
 import { buildQueueEndpoint } from '../endpoints';
-import { mailcowDeleteItems } from '../mailcow-response';
+import { asObjectList, mailcowDeleteItems, mailcowEditBody } from '../mailcow-response';
 
 export class QueuesAPI {
   constructor(private client: APIClient) {}
 
   async listQueueItems(params?: ListQueueParams): Promise<MailcowQueueItem[]> {
-    return this.client.get<MailcowQueueItem[]>(
-      buildQueueEndpoint(APIAction.LIST),
-      { params }
+    void params;
+    return asObjectList<MailcowQueueItem>(
+      await this.client.get<unknown>(buildQueueEndpoint(APIAction.LIST))
     );
   }
 
@@ -25,10 +25,12 @@ export class QueuesAPI {
   }
 
   async getQueueItemDetails(itemId: string): Promise<MailcowQueueItem> {
-    const items = await this.client.get<MailcowQueueItem[]>(
-      buildQueueEndpoint(APIAction.GET)
+    const items = asObjectList<MailcowQueueItem>(
+      await this.client.get<unknown>(buildQueueEndpoint(APIAction.GET))
     );
-    const item = items.find((i) => i.id === itemId);
+    const item = items.find(
+      (i) => i.id === itemId || String((i as { queue_id?: string }).queue_id) === itemId
+    );
     if (!item) {
       throw new Error(`Queue item not found: ${itemId}`);
     }
@@ -42,19 +44,17 @@ export class QueuesAPI {
   }
 
   async holdQueueItem(itemId: string): Promise<void> {
-    // This would require a specific endpoint for holding items
-    // For now, we'll use the general update mechanism
-    await this.client.post<void>(buildQueueEndpoint(APIAction.HOLD), {
-      action: 'hold',
-      items: [itemId],
-    });
+    await this.client.post<void>(
+      buildQueueEndpoint(APIAction.HOLD),
+      mailcowEditBody([itemId], { action: 'hold' })
+    );
   }
 
   async releaseQueueItem(itemId: string): Promise<void> {
-    // This would require a specific endpoint for releasing items
-    await this.client.post<void>(buildQueueEndpoint(APIAction.RELEASE), {
-      action: 'release',
-      items: [itemId],
-    });
+    // Mailcow action is `unhold`. Edit JSON unwraps only items + attr.
+    await this.client.post<void>(
+      buildQueueEndpoint(APIAction.RELEASE),
+      mailcowEditBody([itemId], { action: 'unhold' })
+    );
   }
 } 

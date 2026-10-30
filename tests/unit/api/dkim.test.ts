@@ -93,6 +93,11 @@ describe('DKIMAPI', () => {
       selector: 'dkim',
     });
 
+    expect(client.post).toHaveBeenCalledWith('/api/v1/add/dkim', {
+      domains: 'example.com',
+      dkim_selector: 'dkim',
+      key_size: 2048,
+    });
     expect(created.domain).toBe('example.com');
     expect(created.selector).toBe('dkim');
   });
