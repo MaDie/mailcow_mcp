@@ -14,6 +14,7 @@ export * from './resources';
 export * from './spam';
 export * from './logs';
 export * from './system';
+export * from './status';
 export * from './syncjobs';
 export * from './queues';
 export * from './errors';

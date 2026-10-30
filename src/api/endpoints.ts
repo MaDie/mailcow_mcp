@@ -104,6 +104,11 @@ export const API_ENDPOINTS = {
     BACKUP_CREATE: '/api/v1/add/system/backup',
   },
 
+  // Host status (admin-only). Version exists from Mailcow 2022-05 (PR 4557).
+  STATUS: {
+    VERSION: '/api/v1/get/status/version',
+  },
+
   // Resource endpoints
   RESOURCES: {
     SERVICES: '/api/v1/get/services',
