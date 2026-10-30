@@ -6,6 +6,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Version numbers follow `YYYY.MM.PATCH` (see [README](README.md#versioning)):
 `YYYY.MM` is the newest [mailcow-dockerized](https://github.com/mailcow/mailcow-dockerized) release this build was source-verified against. npm semver forbids a leading zero in the month, so Mailcow `2026-09` is published as `2026.9.0`, not `2026.09.0`.
 
+## [2026.9.2] - 2026-10-30
+
+### Removed
+
+- **User tools** (`list_users`, `get_user`, `create_user`, `update_user`, `delete_user`). Mailcow has no `/user` API category (`json_api.php` has no `case "user"`). Mailcow users *are* mailboxes — use the mailbox tools.
+- **`update_dkim_key`**. `/edit/dkim` does not exist on any compared Mailcow tag. Rotate a key with `delete_dkim_key` then `create_dkim_key`.
+
+### Fixed
+
+- Sync-job **list/get** now call `GET /api/v1/get/syncjobs/all/no_log`. The per-mailbox variant is `GET /api/v1/get/syncjobs/{mailbox}/no_log` (source `object` default).
+- Queue **list/get** now call `GET /api/v1/get/mailq/all` (`json_api.php` only handles `object === "all"`).
+- Queue **release** sends `{ items: [qid], attr: { action: "unhold" } }` as `json_api.php` edit unwrap + `functions.mailq.inc.php` require. The tool stays `release_queue_item` and requires `confirm`. Hold uses the same `{ items, attr }` shape with `action: "hold"`.
+- DKIM **create** sends `{ domains, dkim_selector, key_size }` (`functions.dkim.inc.php` / OpenAPI).
+
+All of the above are **source-verified** against Mailcow `2026-09` `json_api.php` / OpenAPI, **not live-verified**. Written from Mailcow source, not from third-party forks.
+
+### Compatibility notes
+
+Sync-job create/edit field names and queue flush body remain mismatched. Details: [COMPATIBILITY.md](COMPATIBILITY.md).
+
 ## [2026.9.1] - 2026-10-30
 
 ### Fixed

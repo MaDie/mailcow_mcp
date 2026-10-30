@@ -7,7 +7,6 @@ import { APIClient } from '../client';
 import {
   MailcowDKIM,
   CreateDKIMRequest,
-  UpdateDKIMRequest,
   ListDKIMParams,
   MailcowAPIResponse,
   MailcowDomain,
@@ -209,7 +208,11 @@ export class DKIMAPI {
   async createDKIMKey(dkimData: CreateDKIMRequest): Promise<MailcowDKIM> {
     await this.client.post(
       buildDKIMEndpoint(APIAction.CREATE),
-      dkimData
+      {
+        domains: dkimData.domain,
+        dkim_selector: dkimData.selector,
+        key_size: dkimData.key_size ?? 2048,
+      }
     );
     const created = await this.getDKIMKey(dkimData.domain, dkimData.selector);
     if (created) {
@@ -229,25 +232,6 @@ export class DKIMAPI {
   }
 
   /**
-   * Update an existing DKIM key
-   */
-  async updateDKIMKey(
-    domain: string,
-    selector: string,
-    dkimData: UpdateDKIMRequest
-  ): Promise<MailcowDKIM> {
-    await this.client.post(
-      buildDKIMEndpoint(APIAction.UPDATE),
-      { domain, selector, ...dkimData }
-    );
-    const updated = await this.getDKIMKey(domain, selector);
-    if (updated) {
-      return updated;
-    }
-    throw new Error(`DKIM key for domain '${domain}' with selector '${selector}' not found after update`);
-  }
-
-  /**
    * Delete a DKIM key
    */
   async deleteDKIMKey(domain: string, _selector: string): Promise<boolean> {
@@ -259,48 +243,6 @@ export class DKIMAPI {
       return Boolean((response as MailcowAPIResponse).success);
     }
     return true;
-  }
-
-  /**
-   * Activate a DKIM key
-   */
-  async activateDKIMKey(
-    domain: string,
-    selector: string
-  ): Promise<MailcowDKIM> {
-    return this.updateDKIMKey(domain, selector, { active: true });
-  }
-
-  /**
-   * Deactivate a DKIM key
-   */
-  async deactivateDKIMKey(
-    domain: string,
-    selector: string
-  ): Promise<MailcowDKIM> {
-    return this.updateDKIMKey(domain, selector, { active: false });
-  }
-
-  /**
-   * Update DKIM key algorithm
-   */
-  async updateDKIMAlgorithm(
-    domain: string,
-    selector: string,
-    algorithm: 'rsa' | 'ed25519'
-  ): Promise<MailcowDKIM> {
-    return this.updateDKIMKey(domain, selector, { algorithm });
-  }
-
-  /**
-   * Update DKIM key size
-   */
-  async updateDKIMKeySize(
-    domain: string,
-    selector: string,
-    keySize: number
-  ): Promise<MailcowDKIM> {
-    return this.updateDKIMKey(domain, selector, { key_size: keySize });
   }
 
   /**

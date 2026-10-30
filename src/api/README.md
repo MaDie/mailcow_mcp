@@ -20,21 +20,15 @@ This directory contains the HTTP client and API endpoint handlers for communicat
 
 Based on Mailcow documentation analysis, we need to implement:
 
-1. **User Management**:
-   - `/api/v1/get/user` - List users
-   - `/api/v1/add/user` - Create user
-   - `/api/v1/edit/user` - Update user
-   - `/api/v1/delete/user` - Delete user
-
-2. **Quarantine Management**:
+1. **Quarantine Management**:
    - `/api/v1/get/quarantine` - List quarantined items
    - `/api/v1/edit/quarantine` - Release/delete quarantined items
 
 3. **DKIM Management**:
-   - `/api/v1/get/dkim` - Get DKIM keys
-   - `/api/v1/add/dkim` - Add DKIM key
-   - `/api/v1/edit/dkim` - Update DKIM key
+   - `/api/v1/get/dkim/{domain}` - Get DKIM key
+   - `/api/v1/add/dkim` - Add DKIM key (`domains`, `dkim_selector`, `key_size`)
    - `/api/v1/delete/dkim` - Delete DKIM key
+   - There is no `/edit/dkim` — rotate via delete + create
 
 4. **TLS Policy Management**:
    - `/api/v1/get/tls-policy` - Get TLS policies
@@ -157,20 +151,15 @@ POST /api/v1/delete/{resource}  // Delete resource
 - Delete alias: `POST /api/v1/delete/alias`
 - Get user aliases: Filter aliases by goto field
 
-### 7. User Management (`users/`)
-- `UsersAPI` class with CRUD operations
-- List users: `GET /api/v1/get/user`
-- Create user: `POST /api/v1/add/user`
-- Update user: `POST /api/v1/edit/user`
-- Delete user: `POST /api/v1/delete/user`
-- User activation/deactivation and quota management
+### 7. User Management
+- Removed. Mailcow has no `/user` category; use mailbox tools.
 
 ### 8. DKIM Management (`dkim/`)
-- `DKIMAPI` class with CRUD operations
-- List DKIM keys: `GET /api/v1/get/dkim`
-- Create DKIM key: `POST /api/v1/add/dkim`
-- Update DKIM key: `POST /api/v1/edit/dkim`
-- Delete DKIM key: `POST /api/v1/delete/dkim`
+- `DKIMAPI` class for get / add / delete
+- List DKIM keys: `GET /api/v1/get/dkim/{domain}` (walk domains)
+- Create DKIM key: `POST /api/v1/add/dkim` with `{ domains, dkim_selector, key_size }`
+- Delete DKIM key: `POST /api/v1/delete/dkim` with `[domain]`
+- No `/edit/dkim` — rotate via delete + create
 - DNS record generation and validation
 
 ### 9. Quarantine Management (`quarantine/`)

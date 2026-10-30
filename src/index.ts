@@ -25,8 +25,6 @@ import { DomainTools } from './tools/domains/index.js';
 import { DomainAPI } from './api/domains/index.js';
 import { MailboxTools } from './tools/mailboxes/index.js';
 import { MailboxAPI } from './api/mailboxes/index.js';
-import { UserTools } from './tools/users/index.js';
-import { UsersAPI } from './api/users/index.js';
 import { DKIMTools } from './tools/dkim/index.js';
 import { DKIMAPI } from './api/dkim/index.js';
 import { QueueTools } from './tools/queues/index.js';
@@ -238,7 +236,6 @@ class MailcowMCPServer {
         'dkim:read', 'dkim:write', 'dkim:delete',
         'aliases:read', 'aliases:write', 'aliases:delete',
         'filters:read', 'filters:write', 'filters:delete',
-        'users:read', 'users:write', 'users:delete',
         // Email permissions
         'email:send', 'email:read'
       ], // Based on API key capabilities
@@ -450,9 +447,6 @@ class MailcowMCPServer {
     // Register mailbox tools
     await this.registerMailboxTools();
     
-    // Register user tools
-    await this.registerUserTools();
-    
     // Register DKIM tools
     await this.registerDKIMTools();
     
@@ -540,30 +534,6 @@ class MailcowMCPServer {
   }
 
   /**
-   * Register user management tools
-   */
-  private async registerUserTools(): Promise<void> {
-    if (!this.apiClient) {
-      this.logger.warn('API client not available - skipping user tools registration');
-      return;
-    }
-
-    try {
-      const usersAPI = new UsersAPI(this.apiClient);
-      this.registerManagedTools('User tools', [
-        new UserTools.ListUsersTool(this.logger, usersAPI),
-        new UserTools.GetUserTool(this.logger, usersAPI),
-        new UserTools.CreateUserTool(this.logger, usersAPI),
-        new UserTools.UpdateUserTool(this.logger, usersAPI),
-        new UserTools.DeleteUserTool(this.logger, usersAPI),
-      ]);
-    } catch (error) {
-      this.logger.error('Failed to register user tools', error);
-      throw error;
-    }
-  }
-
-  /**
    * Register DKIM management tools
    */
   private async registerDKIMTools(): Promise<void> {
@@ -578,7 +548,6 @@ class MailcowMCPServer {
         new DKIMTools.ListDKIMKeysTool(this.logger, dkimAPI),
         new DKIMTools.GetDKIMKeyTool(this.logger, dkimAPI),
         new DKIMTools.CreateDKIMKeyTool(this.logger, dkimAPI),
-        new DKIMTools.UpdateDKIMKeyTool(this.logger, dkimAPI),
         new DKIMTools.DeleteDKIMKeyTool(this.logger, dkimAPI),
       ]);
     } catch (error) {
