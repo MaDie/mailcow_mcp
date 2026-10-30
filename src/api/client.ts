@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { APIConfig } from '../types/index';
+import { assertMailcowSuccess, MailcowAPIError } from './mailcow-response';
 
 export class APIClient {
   private client: AxiosInstance;
@@ -46,39 +47,53 @@ export class APIClient {
     );
   }
 
+  private unwrap<T>(data: T): T {
+    assertMailcowSuccess(data);
+    return data;
+  }
+
+  private wrapRequestError(method: string, error: unknown): never {
+    if (error instanceof MailcowAPIError) {
+      throw error;
+    }
+    throw new Error(
+      `${method} request failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+
   async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
     try {
       const response: AxiosResponse<T> = await this.client.get(url, { params });
-      return response.data;
+      return this.unwrap(response.data);
     } catch (error) {
-      throw new Error(`GET request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.wrapRequestError('GET', error);
     }
   }
 
   async post<T>(url: string, data?: unknown): Promise<T> {
     try {
       const response: AxiosResponse<T> = await this.client.post(url, data);
-      return response.data;
+      return this.unwrap(response.data);
     } catch (error) {
-      throw new Error(`POST request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.wrapRequestError('POST', error);
     }
   }
 
   async put<T>(url: string, data?: unknown): Promise<T> {
     try {
       const response: AxiosResponse<T> = await this.client.put(url, data);
-      return response.data;
+      return this.unwrap(response.data);
     } catch (error) {
-      throw new Error(`PUT request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.wrapRequestError('PUT', error);
     }
   }
 
   async delete<T>(url: string): Promise<T> {
     try {
       const response: AxiosResponse<T> = await this.client.delete(url);
-      return response.data;
+      return this.unwrap(response.data);
     } catch (error) {
-      throw new Error(`DELETE request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.wrapRequestError('DELETE', error);
     }
   }
 } 

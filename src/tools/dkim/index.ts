@@ -28,7 +28,7 @@ export class ListDKIMKeysTool extends BaseTool {
       domain: {
         type: 'string' as const,
         description: 'Filter by specific domain',
-        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\\\\\\\-]{0,61}[a-zA-Z0-9](?:\\\\\\\\.[a-zA-Z0-9][a-zA-Z0-9\\\\\\\\-]{0,61}[a-zA-Z0-9])*$',
+        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9](?:\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$',
       },
       active_only: {
         type: 'boolean' as const,
@@ -52,7 +52,7 @@ export class ListDKIMKeysTool extends BaseTool {
       },
       created_before: {
         type: 'string' as const,
-        description: 'Filter by creation date (before this date)', 
+        description: 'Filter by creation date (before this date)',
         format: 'date-time',
       },
       limit: {
@@ -129,11 +129,12 @@ export class ListDKIMKeysTool extends BaseTool {
       if (typeof offset === 'number' && offset >= 0) params.offset = offset;
 
       // Fetch DKIM keys from API
-      const keys = await this.dkimAPI.listDKIMKeys(params);
+      const rawKeys = await this.dkimAPI.listDKIMKeys(params);
+      const keys = Array.isArray(rawKeys) ? rawKeys : [];
 
       // Apply client-side filtering if needed
       let filteredKeys = keys;
-      
+
       if (active_only && !params.active) {
         filteredKeys = filteredKeys.filter(key => key.active);
       }
@@ -189,7 +190,7 @@ export class GetDKIMKeyTool extends BaseTool {
       domain: {
         type: 'string' as const,
         description: 'Domain of the DKIM key',
-        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\\\\\\\-]{0,61}[a-zA-Z0-9](?:\\\\\\\\.[a-zA-Z0-9][a-zA-Z0-9\\\\\\\\-]{0,61}[a-zA-Z0-9])*$',
+        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9](?:\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$',
       },
       selector: {
         type: 'string' as const,
@@ -263,16 +264,18 @@ export class GetDKIMKeyTool extends BaseTool {
         };
       }
 
-      // Generate DNS record for the key
+      // Use Mailcow's TXT value as-is; do not wrap it in another v=DKIM1 record
       const dnsRecord = this.dkimAPI.generateDKIMDNSRecord(keyDetails);
+      const hasMaterial = Boolean(keyDetails.dkim_txt || keyDetails.public_key);
+      const isActive = keyDetails.active !== false && hasMaterial;
 
       const formattedKey = {
         domain: keyDetails.domain,
         selector: keyDetails.selector,
         algorithm: keyDetails.algorithm,
         key_size: keyDetails.key_size,
-        active: keyDetails.active,
-        status: keyDetails.active ? 'Active' : 'Inactive',
+        active: isActive,
+        status: isActive ? 'Active' : 'Inactive',
         public_key: keyDetails.public_key,
         dns_record: dnsRecord,
         dns_host: `${keyDetails.selector}._domainkey.${keyDetails.domain}`,
@@ -280,7 +283,7 @@ export class GetDKIMKeyTool extends BaseTool {
           created: keyDetails.created,
           last_modified: keyDetails.modified,
         },
-        validation_status: this.dkimAPI.validateDKIMKey(keyDetails) ? 'Valid' : 'Invalid',
+        validation_status: this.dkimAPI.validateDKIMKey(keyDetails) || hasMaterial ? 'Valid' : 'Invalid',
         key_id: keyDetails.id,
       };
 
@@ -306,7 +309,7 @@ export class CreateDKIMKeyTool extends BaseTool {
       domain: {
         type: 'string' as const,
         description: 'Domain for the DKIM key',
-        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\\\\\\\-]{0,61}[a-zA-Z0-9](?:\\\\\\\\.[a-zA-Z0-9][a-zA-Z0-9\\\\\\\\-]{0,61}[a-zA-Z0-9])*$',
+        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9](?:\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$',
       },
       selector: {
         type: 'string' as const,
@@ -394,15 +397,17 @@ export class CreateDKIMKeyTool extends BaseTool {
 
       // Create DKIM key
       const createdKey = await this.dkimAPI.createDKIMKey(dkimRequest);
+      const createdDomain = createdKey.domain || domain;
+      const createdSelector = createdKey.selector || selector;
 
       // Generate DNS record for the new key
       const dnsRecord = this.dkimAPI.generateDKIMDNSRecord(createdKey);
 
       const result = {
-        message: `DKIM key for domain '${createdKey.domain}' with selector '${createdKey.selector}' created successfully`,
+        message: `DKIM key for domain '${createdDomain}' with selector '${createdSelector}' created successfully`,
         dkim_key: {
-          domain: createdKey.domain,
-          selector: createdKey.selector,
+          domain: createdDomain,
+          selector: createdSelector,
           algorithm: createdKey.algorithm,
           key_size: createdKey.key_size,
           active: createdKey.active,
@@ -412,7 +417,7 @@ export class CreateDKIMKeyTool extends BaseTool {
         },
         dns_configuration: {
           dns_record: dnsRecord,
-          host: `${createdKey.selector}._domainkey.${createdKey.domain}`,
+          host: `${createdSelector}._domainkey.${createdDomain}`,
           instructions: 'Add this TXT record to your DNS configuration to enable DKIM signing',
         },
       };
@@ -439,7 +444,7 @@ export class UpdateDKIMKeyTool extends BaseTool {
       domain: {
         type: 'string' as const,
         description: 'Domain of the DKIM key to update',
-        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\\\\\\\-]{0,61}[a-zA-Z0-9](?:\\\\\\\\.[a-zA-Z0-9][a-zA-Z0-9\\\\\\\\-]{0,61}[a-zA-Z0-9])*$',
+        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9](?:\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$',
       },
       selector: {
         type: 'string' as const,
@@ -592,7 +597,7 @@ export class DeleteDKIMKeyTool extends BaseTool {
       domain: {
         type: 'string' as const,
         description: 'Domain of the DKIM key to delete',
-        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\\\\\\\-]{0,61}[a-zA-Z0-9](?:\\\\\\\\.[a-zA-Z0-9][a-zA-Z0-9\\\\\\\\-]{0,61}[a-zA-Z0-9])*$',
+        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9](?:\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$',
       },
       selector: {
         type: 'string' as const,

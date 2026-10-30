@@ -104,10 +104,51 @@ export abstract class BaseTool implements Tool {
       return false;
     }
 
-    return requiredPermissions.every(permission => 
+    return requiredPermissions.some(permission => 
       context.permissions.includes(permission) ||
       context.permissions.includes('admin')
     );
+  }
+
+  protected permissionDenied(message: string): ToolHandlerResult {
+    return {
+      success: false,
+      error: {
+        code: MCPErrorCode.AUTHORIZATION_ERROR,
+        message,
+      },
+    };
+  }
+
+  protected invalidParams(message: string): ToolHandlerResult {
+    return {
+      success: false,
+      error: {
+        code: MCPErrorCode.INVALID_PARAMS,
+        message,
+      },
+    };
+  }
+
+  protected notFound(message: string): ToolHandlerResult {
+    return {
+      success: false,
+      error: {
+        code: MCPErrorCode.RESOURCE_NOT_FOUND,
+        message,
+      },
+    };
+  }
+
+  protected requireAccess(
+    context: ToolContext,
+    permissions: string[],
+    message: string
+  ): ToolHandlerResult | null {
+    if (!this.validatePermissions(context, permissions)) {
+      return this.permissionDenied(message);
+    }
+    return null;
   }
 
   /**

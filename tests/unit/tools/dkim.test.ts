@@ -224,6 +224,20 @@ describe('DKIM Management Tools', () => {
       expect(result.error?.code).toBe(MCPErrorCode.TOOL_EXECUTION_ERROR);
     });
 
+    it('should not throw when the API returns a non-array payload', async () => {
+      (dkimAPI.listDKIMKeys as jest.Mock).mockResolvedValue({
+        dkim_selector: 'dkim',
+        dkim_txt: 'v=DKIM1;k=rsa;p=ABC',
+      });
+
+      const result = await tool.execute({}, context);
+
+      expect(result.success).toBe(true);
+      const data = JSON.parse((result.result!.content[0] as any).text);
+      expect(data.total_keys).toBe(0);
+      expect(data.keys).toEqual([]);
+    });
+
     it('should show public key preview', async () => {
       (dkimAPI.listDKIMKeys as jest.Mock).mockResolvedValue(sampleDKIMKeys);
 
@@ -291,6 +305,33 @@ describe('DKIM Management Tools', () => {
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(MCPErrorCode.RESOURCE_NOT_FOUND);
       expect(result.error?.message).toContain('not found');
+    });
+
+    it('should treat a Mailcow-shaped key as active and keep the TXT record', async () => {
+      const mailcowKey = {
+        domain: 'example.com',
+        selector: 'dkim',
+        dkim_txt: 'v=DKIM1;k=rsa;p=ABC',
+        public_key: 'ABC',
+        key_size: 2048,
+        algorithm: 'rsa' as const,
+        active: true,
+      };
+      (dkimAPI.getDKIMKey as jest.Mock).mockResolvedValue(mailcowKey);
+      (dkimAPI.generateDKIMDNSRecord as jest.Mock).mockReturnValue(mailcowKey.dkim_txt);
+      (dkimAPI.validateDKIMKey as jest.Mock).mockReturnValue(true);
+
+      const result = await tool.execute({
+        domain: 'example.com',
+        selector: 'dkim',
+      }, context);
+
+      expect(result.success).toBe(true);
+      const data = JSON.parse((result.result!.content[0] as any).text);
+      expect(data.status).toBe('Active');
+      expect(data.validation_status).toBe('Valid');
+      expect(data.dns_record).toBe('v=DKIM1;k=rsa;p=ABC');
+      expect(data.dns_record).not.toContain('k=undefined');
     });
 
     it('should validate input parameters', async () => {
@@ -373,6 +414,22 @@ describe('DKIM Management Tools', () => {
         key_size: 4096,
         algorithm: 'ed25519'
       });
+    });
+
+    it('should report domain and selector when the API omits them', async () => {
+      (dkimAPI.createDKIMKey as jest.Mock).mockResolvedValue({});
+      (dkimAPI.generateDKIMDNSRecord as jest.Mock).mockReturnValue('v=DKIM1; k=rsa; p=');
+
+      const result = await tool.execute({
+        domain: 'new.com',
+        selector: 'mail',
+      }, context);
+
+      expect(result.success).toBe(true);
+      const data = JSON.parse((result.result!.content[0] as any).text);
+      expect(data.message).toContain("domain 'new.com'");
+      expect(data.message).toContain("selector 'mail'");
+      expect(data.message).not.toContain('undefined');
     });
 
     it('should validate required parameters', async () => {

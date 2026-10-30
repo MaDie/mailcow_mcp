@@ -75,6 +75,7 @@ export enum ToolCategory {
   DOMAIN = 'domain',
   MAILBOX = 'mailbox',
   ALIAS = 'alias',
+  SIEVE = 'sieve',
   SYSTEM = 'system',
   SPAM = 'spam',
   LOGS = 'logs',

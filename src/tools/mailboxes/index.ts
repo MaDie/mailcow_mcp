@@ -29,7 +29,7 @@ export class ListMailboxesTool extends BaseTool {
       domain: {
         type: 'string' as const,
         description: 'Filter by specific domain',
-        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\\\-]{0,61}[a-zA-Z0-9](?:\\\\.[a-zA-Z0-9][a-zA-Z0-9\\\\-]{0,61}[a-zA-Z0-9])*$',
+        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9](?:\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$',
       },
       active_only: {
         type: 'boolean' as const,
@@ -287,7 +287,7 @@ export class CreateMailboxTool extends BaseTool {
       domain: {
         type: 'string' as const,
         description: 'Domain for the mailbox',
-        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\\\-]{0,61}[a-zA-Z0-9](?:\\\\.[a-zA-Z0-9][a-zA-Z0-9\\\\-]{0,61}[a-zA-Z0-9])*$',
+        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9](?:\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$',
       },
       password: {
         type: 'string' as const,
@@ -383,12 +383,13 @@ export class CreateMailboxTool extends BaseTool {
 
       // Create mailbox
       const createdMailbox = await this.mailboxAPI.createMailbox(mailboxRequest);
+      const username = createdMailbox.username || `${local_part}@${domain}`;
 
       const result = {
-        message: `Mailbox '${createdMailbox.username}' created successfully`,
+        message: `Mailbox '${username}' created successfully`,
         mailbox: {
-          username: createdMailbox.username,
-          domain: createdMailbox.domain,
+          username,
+          domain: createdMailbox.domain || domain,
           local_part: createdMailbox.local_part,
           name: createdMailbox.name || 'No name set',
           active: createdMailbox.active,

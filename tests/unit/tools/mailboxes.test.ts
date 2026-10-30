@@ -14,12 +14,6 @@ import { MailboxAPI } from '../../../src/api/mailboxes';
 import { Logger } from '../../../src/utils';
 import { ToolContext, MailcowMailbox, MCPErrorCode } from '../../../src/types';
 
-// Mock the validation functions
-jest.mock('../../../src/tools/validation', () => ({
-  validateToolInput: jest.fn(),
-  validateToolSchema: jest.fn(() => ({ valid: true, errors: [], warnings: [] }))
-}));
-
 describe('Mailbox Management Tools', () => {
   let logger: Logger;
   let mailboxAPI: MailboxAPI;
@@ -107,7 +101,6 @@ describe('Mailbox Management Tools', () => {
     beforeEach(() => {
       tool = new ListMailboxesTool(logger, mailboxAPI);
       jest.spyOn(tool as any, 'validatePermissions').mockReturnValue(true);
-      jest.spyOn(tool as any, 'validateInput').mockReturnValue({ valid: true, errors: [], warnings: [] });
     });
 
     it('should have correct tool metadata', () => {
@@ -227,7 +220,6 @@ describe('Mailbox Management Tools', () => {
     beforeEach(() => {
       tool = new GetMailboxTool(logger, mailboxAPI);
       jest.spyOn(tool as any, 'validatePermissions').mockReturnValue(true);
-      jest.spyOn(tool as any, 'validateInput').mockReturnValue({ valid: true, errors: [], warnings: [] });
     });
 
     it('should have correct tool metadata', () => {
@@ -316,7 +308,6 @@ describe('Mailbox Management Tools', () => {
     beforeEach(() => {
       tool = new CreateMailboxTool(logger, mailboxAPI);
       jest.spyOn(tool as any, 'validatePermissions').mockReturnValue(true);
-      jest.spyOn(tool as any, 'validateInput').mockReturnValue({ valid: true, errors: [], warnings: [] });
     });
 
     it('should have correct tool metadata', () => {
@@ -374,6 +365,24 @@ describe('Mailbox Management Tools', () => {
       });
     });
 
+    it('should report the mailbox name when the API omits username', async () => {
+      (mailboxAPI.createMailbox as jest.Mock).mockResolvedValue({
+        domain: 'example.com',
+        local_part: 'new',
+      });
+
+      const result = await tool.execute({
+        local_part: 'new',
+        domain: 'example.com',
+        password: 'securepassword123',
+      }, context);
+
+      expect(result.success).toBe(true);
+      const data = JSON.parse((result.result!.content[0] as any).text);
+      expect(data.message).toContain('new@example.com');
+      expect(data.message).not.toContain('undefined');
+    });
+
     it('should validate required string parameters', async () => {
       const input = {
         local_part: 123,
@@ -385,7 +394,7 @@ describe('Mailbox Management Tools', () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(MCPErrorCode.INVALID_PARAMS);
-      expect(result.error?.message).toContain('must be strings');
+      expect(result.error?.message).toContain('must be a string');
     });
 
     it('should handle permission denial', async () => {
@@ -410,7 +419,6 @@ describe('Mailbox Management Tools', () => {
     beforeEach(() => {
       tool = new UpdateMailboxTool(logger, mailboxAPI);
       jest.spyOn(tool as any, 'validatePermissions').mockReturnValue(true);
-      jest.spyOn(tool as any, 'validateInput').mockReturnValue({ valid: true, errors: [], warnings: [] });
     });
 
     it('should have correct tool metadata', () => {
@@ -503,7 +511,6 @@ describe('Mailbox Management Tools', () => {
     beforeEach(() => {
       tool = new DeleteMailboxTool(logger, mailboxAPI);
       jest.spyOn(tool as any, 'validatePermissions').mockReturnValue(true);
-      jest.spyOn(tool as any, 'validateInput').mockReturnValue({ valid: true, errors: [], warnings: [] });
     });
 
     it('should have correct tool metadata', () => {
@@ -595,32 +602,27 @@ describe('Mailbox Management Tools', () => {
     });
 
     it('should validate input schema', async () => {
-      jest.spyOn(listTool as any, 'validateInput').mockReturnValue({
-        valid: false,
-        errors: [{ field: 'limit', message: 'Invalid limit value', code: 'INVALID' }],
-        warnings: []
-      });
-
       const result = await listTool.execute({ limit: 'invalid' }, context);
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(MCPErrorCode.INVALID_PARAMS);
     });
 
     it('should handle edge cases in filtering', async () => {
-      jest.spyOn(listTool as any, 'validateInput').mockReturnValue({ valid: true, errors: [], warnings: [] });
       (mailboxAPI.listMailboxes as jest.Mock).mockResolvedValue(sampleMailboxes);
 
       // Empty search should return all
       const result1 = await listTool.execute({ search: '' }, context);
       expect(result1.success).toBe(true);
+    });
 
-      // Zero limit should not apply limit
-      const result2 = await listTool.execute({ limit: 0 }, context);
-      expect(result2.success).toBe(true);
+    it('should reject limit below minimum', async () => {
+      const result1 = await listTool.execute({ limit: 0 }, context);
+      expect(result1.success).toBe(false);
+      expect(result1.error?.code).toBe(MCPErrorCode.INVALID_PARAMS);
 
-      // Negative limit should not apply limit
-      const result3 = await listTool.execute({ limit: -1 }, context);
-      expect(result3.success).toBe(true);
+      const result2 = await listTool.execute({ limit: -1 }, context);
+      expect(result2.success).toBe(false);
+      expect(result2.error?.code).toBe(MCPErrorCode.INVALID_PARAMS);
     });
   });
 
@@ -630,7 +632,6 @@ describe('Mailbox Management Tools', () => {
     beforeEach(() => {
       createTool = new CreateMailboxTool(logger, mailboxAPI);
       jest.spyOn(createTool as any, 'validatePermissions').mockReturnValue(true);
-      jest.spyOn(createTool as any, 'validateInput').mockReturnValue({ valid: true, errors: [], warnings: [] });
     });
 
     it('should handle various API errors', async () => {

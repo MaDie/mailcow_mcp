@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "ts-node src/index.ts",
-    "start": "node dist/src/index.js",
+    "start": "node dist/index.js",
     "test": "jest",
     "test:unit": "jest tests/unit",
     "test:integration": "node tests/integration/server-startup.test.js",
@@ -33,13 +33,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.4.0",
     "axios": "^1.6.0",
-    "bytes": "^3.1.2",
-    "date-fns": "^4.1.0",
     "dotenv": "^16.3.0",
-    "pretty-bytes": "^7.0.0",
     "validator": "^13.15.15",
     "xss": "^1.0.15",
-    "yaml": "^2.3.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {

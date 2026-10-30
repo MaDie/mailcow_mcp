@@ -391,15 +391,17 @@ export class CreateDomainTool extends BaseTool {
 
       // Create domain
       const createdDomain = await this.domainAPI.createDomain(domainRequest);
+      const domainName =
+        createdDomain.domain || createdDomain.domain_name || domain;
 
       const result = {
-        message: `Domain '${createdDomain.domain}' created successfully`,
+        message: `Domain '${domainName}' created successfully`,
         domain: {
-          domain: createdDomain.domain,
+          domain: domainName,
           description: createdDomain.description || 'No description',
           active: createdDomain.active,
-          quota: `${createdDomain.quota} MB`,
-          max_quota: `${createdDomain.maxquota} MB`,
+          quota: `${createdDomain.quota ?? createdDomain.max_quota_for_domain ?? quotaNum} MB`,
+          max_quota: `${createdDomain.maxquota ?? createdDomain.max_quota_for_domain ?? maxQuotaNum} MB`,
           relay_host: createdDomain.relayhost || 'None',
           relay_all: createdDomain.relay_all_recipients || false,
           created: createdDomain.created,
@@ -580,9 +582,9 @@ export class UpdateDomainTool extends BaseTool {
       );
 
       const result = {
-        message: `Domain '${updatedDomain.domain}' updated successfully`,
+        message: `Domain '${updatedDomain.domain || updatedDomain.domain_name || domain}' updated successfully`,
         domain: {
-          domain: updatedDomain.domain,
+          domain: updatedDomain.domain || updatedDomain.domain_name || domain,
           description: updatedDomain.description || 'No description',
           active: updatedDomain.active,
           status: updatedDomain.active ? 'Active' : 'Inactive',

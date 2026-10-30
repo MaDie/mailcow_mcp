@@ -36,13 +36,11 @@ export class ToolRegistry implements IToolRegistry {
   private handlers = new Map<string, ToolHandler>();
   private metadata = new Map<string, ToolMetadata>();
   private rateLimits = new Map<string, ToolRateLimit>();
-  private cache: ToolCache;
   private monitoring: ToolMonitoring;
   private logger: Logger;
 
-  constructor(logger: Logger, cache?: ToolCache, monitoring?: ToolMonitoring) {
+  constructor(logger: Logger, _cache?: ToolCache, monitoring?: ToolMonitoring) {
     this.logger = logger;
-    this.cache = cache || new MapToolCache();
     this.monitoring = monitoring || new MapToolMonitoring();
   }
 
@@ -200,35 +198,14 @@ export class ToolRegistry implements IToolRegistry {
         throw new ToolValidationError(toolName, validation.errors);
       }
 
-      // Check cache
-      const cacheKey = this.generateCacheKey(toolName, input, context);
-      const cachedResult = this.cache.get(cacheKey);
-      if (cachedResult) {
-        execution.status = 'completed';
-        execution.endTime = new Date();
-        execution.duration = execution.endTime.getTime() - execution.startTime.getTime();
-        execution.result = cachedResult;
-        
-        this.monitoring.recordExecution(execution);
-        return {
-          execution,
-          success: true,
-          result: cachedResult,
-        };
-      }
-
-      // Execute tool
+      // Execute tool. Results are not cached: Mailcow state changes on writes
+      // and a 5-minute cache would hide failed creates and stale lists.
       const result = await handler(input as any, context);
       
       execution.status = 'completed';
       execution.endTime = new Date();
       execution.duration = execution.endTime.getTime() - execution.startTime.getTime();
       execution.result = result.result;
-
-      // Cache result if successful
-      if (result.success && result.result) {
-        this.cache.set(cacheKey, result.result);
-      }
 
       this.monitoring.recordExecution(execution);
       
@@ -334,32 +311,6 @@ export class ToolRegistry implements IToolRegistry {
   }
 
   /**
-   * Generate cache key for tool execution
-   */
-  private generateCacheKey(toolName: string, input: unknown, context: ToolContext): string {
-    const inputHash = JSON.stringify(input);
-    const contextHash = JSON.stringify({
-      userId: context.userId,
-      permissions: context.permissions,
-      accessLevel: context.accessLevel,
-    });
-    return `${toolName}_${this.hashString(inputHash + contextHash)}`;
-  }
-
-  /**
-   * Simple string hashing
-   */
-  private hashString(str: string): string {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return Math.abs(hash).toString(36);
-  }
-
-  /**
    * Check rate limit for tool execution
    */
   private checkRateLimit(toolName: string, _context: ToolContext): boolean {
@@ -413,10 +364,8 @@ export class MapToolCache implements ToolCache {
     return this.cache.get(key);
   }
 
-  set(key: string, result: ToolResult, ttl: number = 300000): void {
+  set(key: string, result: ToolResult, _ttl: number = 300000): void {
     this.cache.set(key, result);
-    // Simple TTL implementation - in production, use a proper cache with TTL
-    setTimeout(() => this.delete(key), ttl);
   }
 
   delete(key: string): boolean {

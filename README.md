@@ -9,6 +9,8 @@
 
 A comprehensive TypeScript implementation that provides AI models with full control over Mailcow email servers through the Model Context Protocol. Manage domains, mailboxes, queues, sync jobs, and send emails - all with a single, secure API.
 
+This repository is a fork of the upstream project [leolilley/mailcow_mcp](https://github.com/leolilley/mailcow_mcp).
+
 ## ✨ Features
 
 🎯 **Complete Email Management** - 20 MCP tools for full Mailcow control  
@@ -210,6 +212,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+Upstream project: [leolilley/mailcow_mcp](https://github.com/leolilley/mailcow_mcp) (MIT, Copyright leolilley).
+
 ## 🆘 Support
 
 - **Documentation**: [docs/README.md](docs/README.md)
@@ -218,6 +222,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
+- **[leolilley/mailcow_mcp](https://github.com/leolilley/mailcow_mcp)** - Upstream Mailcow MCP server
 - **[Model Context Protocol](https://modelcontextprotocol.io/)** - The protocol that makes this possible
 - **[Mailcow](https://mailcow.email/)** - The excellent email server platform  
 - **[TypeScript](https://www.typescriptlang.org/)** - For robust type safety and excellent tooling
