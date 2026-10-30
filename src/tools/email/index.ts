@@ -421,7 +421,7 @@ export class CheckEmailStatusTool extends BaseTool {
             result: ToolUtils.createJsonResult(result),
           };
         }
-      } catch (error) {
+      } catch (_error) {
         // Queue item not found, check logs for delivery status
       }
 
@@ -467,7 +467,7 @@ export class CheckEmailStatusTool extends BaseTool {
             result: ToolUtils.createJsonResult(result),
           };
         }
-      } catch (error) {
+      } catch (_error) {
         // Log retrieval failed, continue with not found response
       }
 

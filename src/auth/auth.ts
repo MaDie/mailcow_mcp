@@ -169,7 +169,9 @@ export class AuthManager {
         const regex = new RegExp(pattern);
         if (regex.test(value)) return true;
       }
-    } catch {}
+    } catch {
+      // Pattern is not a valid RegExp — fall through to substring match.
+    }
     return value.includes(pattern) || pattern.includes(value);
   }
 

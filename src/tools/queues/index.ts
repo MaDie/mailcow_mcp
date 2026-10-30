@@ -487,7 +487,7 @@ export class DeleteQueueItemsTool extends BaseTool {
             subject: item.subject,
             status: item.status,
           });
-        } catch (error) {
+        } catch (_error) {
           // Item might not exist - continue with deletion attempt
           itemDetails.push({
             id: itemId,

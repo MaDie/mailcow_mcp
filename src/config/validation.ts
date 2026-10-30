@@ -12,7 +12,7 @@ export const APIConfigSchema = z.object({
   url: z.string().url('Invalid API URL'),
   key: z.string().min(1, 'API key is required'),
   accessType: z.enum(['read-only', 'read-write'], {
-    errorMap: () => ({ message: 'Access type must be read-only or read-write' })
+    error: () => 'Access type must be read-only or read-write',
   }),
   timeout: z.number().min(1000, 'Timeout must be at least 1000ms').max(60000, 'Timeout must be at most 60000ms'),
   verifySSL: z.boolean(),
@@ -53,13 +53,13 @@ export const ServerConfigSchema = z.object({
 
 export const LoggingConfigSchema = z.object({
   level: z.enum(['debug', 'info', 'warn', 'error'], {
-    errorMap: () => ({ message: 'Log level must be debug, info, warn, or error' })
+    error: () => 'Log level must be debug, info, warn, or error',
   }),
   format: z.enum(['json', 'text'], {
-    errorMap: () => ({ message: 'Log format must be json or text' })
+    error: () => 'Log format must be json or text',
   }),
   destination: z.enum(['console', 'file', 'syslog'], {
-    errorMap: () => ({ message: 'Log destination must be console, file, or syslog' })
+    error: () => 'Log destination must be console, file, or syslog',
   }),
   filePath: z.string().optional(),
   maxFileSize: z.number().min(1024, 'Max file size must be at least 1024 bytes').max(104857600, 'Max file size must be at most 100MB'),
@@ -90,7 +90,7 @@ export function validateConfig(config: unknown): ConfigValidationResult {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        errors: error.errors.map(err => ({
+        errors: error.issues.map(err => ({
           path: err.path.join('.'),
           message: err.message,
           code: err.code,
@@ -126,7 +126,7 @@ export function validateAPIConfig(config: unknown): ConfigValidationResult {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        errors: error.errors.map(err => ({
+        errors: error.issues.map(err => ({
           path: err.path.join('.'),
           message: err.message,
           code: err.code,

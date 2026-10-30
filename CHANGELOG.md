@@ -6,6 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Version numbers follow `YYYY.MM.PATCH` (see [README](README.md#versioning)):
 `YYYY.MM` is the newest [mailcow-dockerized](https://github.com/mailcow/mailcow-dockerized) release this build was source-verified against. npm semver forbids a leading zero in the month, so Mailcow `2026-09` is published as `2026.9.0`, not `2026.09.0`.
 
+## [2026.9.3] - 2026-10-30
+
+### Changed
+
+- **README** rewritten to match the registered tools: 47 tools including aliases, sieve filters, DKIM (no update), and `get_mailcow_version`. Removed user tools and `update_dkim_key` are documented. Start command is `node dist/index.js`. Env vars, versioning, [COMPATIBILITY.md](COMPATIBILITY.md), and MIT / [leolilley/mailcow_mcp](https://github.com/leolilley/mailcow_mcp) attribution are explicit. Stale “20 tools”, coverage claims, and placeholder GitHub URLs are gone.
+- **Dependencies** updated to current releases used by this tree (MCP SDK 1.32, Zod 4, axios 1.21, dotenv 18, ESLint 10, Jest 30, TypeScript 5.9). Node engine is `>=20`. Dependabot weekly config added. See the 2026.9.3 PR for the before/after table.
+
+### Compatibility notes
+
+No Mailcow path or payload changes versus 2026.9.2. [COMPATIBILITY.md](COMPATIBILITY.md) still applies.
+
 ## [2026.9.2] - 2026-10-30
 
 ### Removed

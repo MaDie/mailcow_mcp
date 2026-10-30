@@ -63,6 +63,12 @@ class MailcowMCPServer {
       {
         name: MCP_PACKAGE_NAME,
         version: MCP_PACKAGE_VERSION,
+      },
+      {
+        capabilities: {
+          tools: {},
+          logging: {},
+        },
       }
     );
 

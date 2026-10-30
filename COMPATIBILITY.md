@@ -8,7 +8,7 @@ This document records which [mailcow-dockerized](https://github.com/mailcow/mail
 
 | Item | Result |
 |------|--------|
-| Newest Mailcow release this build is versioned against | **2026-09** (npm package `2026.9.2`) |
+| Newest Mailcow release this build is versioned against | **2026-09** (npm package `2026.9.3`) |
 | Newest Mailcow tag whose API source was compared | **2026-10** (used routes unchanged vs 2026-09 except an unrelated `ui_theme` add) |
 | Oldest Mailcow tag whose `json_api.php` was compared | **2022-01** |
 | Minimum source-verified Mailcow for the working read/create subset | **2022-01** |
@@ -41,7 +41,7 @@ Legend:
 | Mailcow release | Status | What changes vs this MCP server |
 |-----------------|--------|----------------------------------|
 | `2026-10` | partial (source only) | Same used `json_api.php` routes as `2026-09`. Diff vs `2026-09` adds `ui_theme` only. **Not live-tested.** |
-| `2026-09` / `2026-09a` | **partial — production target** | Baseline for package version `2026.9.2`. `2026-09` source was read in full for the files listed above. `2026-09a` itself was **not** downloaded (unverified letter suffix). |
+| `2026-09` / `2026-09a` | **partial — production target** | Baseline for package version `2026.9.3`. `2026-09` source was read in full for the files listed above. `2026-09a` itself was **not** downloaded (unverified letter suffix). |
 | `2026-07` … `2026-03` | unverified | Monthly tags exist; files were not fetched. No evidence they removed the used routes. |
 | `2026-01` | partial | Same used routes as `2026-09` in `json_api.php` (domain, mailbox, alias, filter, dkim, logs, mailq, syncjob write, syncjobs read, status/version). |
 | `2025-12` … `2025-10` | unverified | Not downloaded. |
@@ -161,4 +161,4 @@ Domain/mailbox/alias **list, get, create, edit, and delete** match the `json_api
 
 ## Versioning
 
-See [README](README.md#versioning) and [CHANGELOG.md](CHANGELOG.md). Package version `YYYY.MM.PATCH` names the Mailcow `YYYY-MM` release this tree was source-verified against. `2026.9.2` is an MCP-only PATCH on the `2026-09` target (npm semver cannot encode `2026.09.0`).
+See [README](README.md#versioning) and [CHANGELOG.md](CHANGELOG.md). Package version `YYYY.MM.PATCH` names the Mailcow `YYYY-MM` release this tree was source-verified against. `2026.9.3` is an MCP-only PATCH on the `2026-09` target (npm semver cannot encode `2026.09.0`).

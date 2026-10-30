@@ -18,7 +18,7 @@ Get server health status and basic metrics.
   "timestamp": "2023-12-07T10:30:00.000Z",
   "server": {
     "name": "mailcow-mcp",
-    "version": "2026.9.2",
+    "version": "2026.9.3",
     "versioning_scheme": "YYYY.MM.PATCH",
     "tested_mailcow": "2026-09",
     "uptime": 3600
@@ -67,7 +67,7 @@ Report this MCP package version, the Mailcow release it was source-verified agai
 {
   "mcp": {
     "name": "mailcow-mcp",
-    "version": "2026.9.2",
+    "version": "2026.9.3",
     "versioning_scheme": "YYYY.MM.PATCH",
     "tested_mailcow": "2026-09"
   },
