@@ -16,6 +16,8 @@ import {
   asObjectList,
   fromMailcowFlag,
   MailcowAPIError,
+  mailcowDeleteItems,
+  mailcowEditBody,
   toMailcowFlag,
 } from '../mailcow-response';
 
@@ -95,17 +97,18 @@ export class FilterAPI {
       ),
     };
 
-    await this.client.post(buildFilterEndpoint(APIAction.UPDATE), {
-      items: [filterId],
-      attr,
-    });
+    await this.client.post(
+      buildFilterEndpoint(APIAction.UPDATE),
+      mailcowEditBody([filterId], attr)
+    );
     return this.getFilter(filterId);
   }
 
   async deleteFilter(filterId: string): Promise<void> {
-    await this.client.post<void>(buildFilterEndpoint(APIAction.DELETE), {
-      items: [filterId],
-    });
+    await this.client.post<void>(
+      buildFilterEndpoint(APIAction.DELETE),
+      mailcowDeleteItems([filterId])
+    );
   }
 
   async getFilter(filterId: string): Promise<MailcowSieveFilter> {

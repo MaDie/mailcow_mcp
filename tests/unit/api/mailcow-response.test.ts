@@ -7,6 +7,8 @@ import {
   isMailcowActionItem,
   isMailcowFailureType,
   MailcowAPIError,
+  mailcowDeleteItems,
+  mailcowEditBody,
   toMailcowFlag,
 } from '../../../src/api/mailcow-response';
 
@@ -97,5 +99,17 @@ describe('Mailcow action responses', () => {
     expect(
       findActionMessage([{ type: 'success', msg: ['mailbox_modified'] }], 'alias_added')
     ).toBeNull();
+  });
+
+  it('builds Mailcow delete bodies as a plain item array', () => {
+    expect(mailcowDeleteItems(['info@example.com'])).toEqual(['info@example.com']);
+    expect(mailcowDeleteItems([6])).toEqual(['6']);
+  });
+
+  it('builds Mailcow edit bodies as items plus attr', () => {
+    expect(mailcowEditBody(['example.com'], { active: '0' })).toEqual({
+      items: ['example.com'],
+      attr: { active: '0' },
+    });
   });
 });

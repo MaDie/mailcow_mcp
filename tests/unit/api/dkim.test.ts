@@ -96,4 +96,12 @@ describe('DKIMAPI', () => {
     expect(created.domain).toBe('example.com');
     expect(created.selector).toBe('dkim');
   });
+
+  it('deletes a DKIM key by sending the domain list as the JSON body', async () => {
+    client.post.mockResolvedValue([{ type: 'success', msg: ['dkim_removed'] }]);
+
+    await api.deleteDKIMKey('example.com', 'dkim');
+
+    expect(client.post).toHaveBeenCalledWith('/api/v1/delete/dkim', ['example.com']);
+  });
 });

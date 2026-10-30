@@ -80,6 +80,6 @@ describe('AliasAPI', () => {
     });
 
     await api.deleteAlias('6');
-    expect(client.post).toHaveBeenCalledWith('/api/v1/delete/alias', { items: ['6'] });
+    expect(client.post).toHaveBeenCalledWith('/api/v1/delete/alias', ['6']);
   });
 });
