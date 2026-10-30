@@ -10,14 +10,14 @@ describe('StatusAPI', () => {
   });
 
   it('uses GET /api/v1/get/status/version', async () => {
-    get.mockResolvedValue({ version: '2026-09' });
+    get.mockResolvedValue({ version: '2026-10' });
 
     const status = await new StatusAPI(client).getVersion();
 
     expect(get).toHaveBeenCalledWith(API_ENDPOINTS.STATUS.VERSION);
     expect(status).toMatchObject({
       reachable: true,
-      version: '2026-09',
+      version: '2026-10',
       matches_tested: true,
       warning: null,
     });

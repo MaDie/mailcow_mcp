@@ -16,12 +16,14 @@ import { APIAction } from '../../types/api';
 import { mailcowDeleteItems } from '../mailcow-response';
 
 interface RawDKIM {
-  id?: number;
+  id?: number | string;
   domain?: string;
   selector?: string;
   dkim_selector?: string;
   key_size?: number | string;
   key_length?: number | string;
+  /** Mailcow `dkim('details')` / OpenAPI: bits as a string, e.g. "2048" or ">= 8192" */
+  length?: number | string;
   algorithm?: 'rsa' | 'ed25519' | string;
   public_key?: string;
   pubkey?: string;
@@ -50,17 +52,38 @@ function extractPublicKey(record: string | undefined): string | undefined {
   return match?.[1];
 }
 
-function toDate(value: Date | string | undefined): Date {
-  if (value instanceof Date) {
+function parsePositiveInt(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
     return value;
   }
-  if (typeof value === 'string' && value) {
+  if (typeof value === 'string' && value.trim()) {
+    const match = value.match(/(\d+)/);
+    if (match) {
+      const parsed = Number(match[1]);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+  }
+  return undefined;
+}
+
+/** Mailcow GET /dkim returns `length`, not `key_size` / `key_length`. */
+function parseKeySize(raw: RawDKIM): number | undefined {
+  return parsePositiveInt(raw.key_size) ?? parsePositiveInt(raw.key_length) ?? parsePositiveInt(raw.length);
+}
+
+function toOptionalDate(value: Date | string | undefined): Date | undefined {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) || value.getTime() === 0 ? undefined : value;
+  }
+  if (typeof value === 'string' && value.trim()) {
     const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) {
+    if (!Number.isNaN(parsed.getTime()) && parsed.getTime() !== 0) {
       return parsed;
     }
   }
-  return new Date(0);
+  return undefined;
 }
 
 export function normalizeDKIMKey(
@@ -98,20 +121,23 @@ export function normalizeDKIMKey(
     (raw.algorithm === 'ed25519' || raw.algorithm === 'rsa'
       ? raw.algorithm
       : parseAlgorithm(typeof dkimTxt === 'string' ? dkimTxt : undefined)) ?? 'rsa';
-  const keySize = Number(raw.key_size ?? raw.key_length ?? 0);
+  const keySize = parseKeySize(raw);
   const hasMaterial = Boolean(dkimTxt || publicKey);
+  const id = parsePositiveInt(raw.id);
+  const created = toOptionalDate(raw.created);
+  const modified = toOptionalDate(raw.modified);
 
   return {
-    id: raw.id ?? 0,
+    ...(id !== undefined ? { id } : {}),
     domain: raw.domain ?? domain,
     selector: selector || 'dkim',
-    key_size: Number.isFinite(keySize) ? keySize : 0,
+    ...(keySize !== undefined ? { key_size: keySize } : {}),
     algorithm,
     public_key: publicKey,
     dkim_txt: typeof dkimTxt === 'string' ? dkimTxt : undefined,
     active: raw.active !== undefined ? Boolean(raw.active) : hasMaterial,
-    created: toDate(raw.created),
-    modified: toDate(raw.modified),
+    ...(created ? { created } : {}),
+    ...(modified ? { modified } : {}),
   };
 }
 
@@ -168,10 +194,10 @@ export class DKIMAPI {
       if (params?.algorithm && key.algorithm !== params.algorithm) {
         return false;
       }
-      if (params?.created_after && key.created < params.created_after) {
+      if (params?.created_after && (!key.created || key.created < params.created_after)) {
         return false;
       }
-      if (params?.created_before && key.created > params.created_before) {
+      if (params?.created_before && (!key.created || key.created > params.created_before)) {
         return false;
       }
       return true;
@@ -219,15 +245,12 @@ export class DKIMAPI {
       return created;
     }
     return {
-      id: 0,
       domain: dkimData.domain,
       selector: dkimData.selector,
       key_size: dkimData.key_size ?? 2048,
       algorithm: dkimData.algorithm ?? 'rsa',
       public_key: '',
       active: true,
-      created: new Date(),
-      modified: new Date(),
     };
   }
 

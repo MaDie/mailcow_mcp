@@ -3,8 +3,10 @@ import { APIClient } from '../../../src/api/client';
 
 const MAILCOW_DKIM = {
   dkim_selector: 'dkim',
-  key_length: '2048',
+  length: '2048',
+  pubkey: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A',
   dkim_txt: 'v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A',
+  privkey: '',
 };
 
 describe('normalizeDKIMKey', () => {
@@ -20,6 +22,42 @@ describe('normalizeDKIMKey', () => {
       dkim_txt: MAILCOW_DKIM.dkim_txt,
       active: true,
     });
+  });
+
+  it('maps OpenAPI/live length + dkim_selector and omits invented id/dates', () => {
+    const key = normalizeDKIMKey('example.com', {
+      dkim_selector: 'mail',
+      length: '2048',
+      pubkey: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A',
+      dkim_txt: 'v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A',
+      privkey: '',
+    });
+
+    expect(key).toEqual({
+      domain: 'example.com',
+      selector: 'mail',
+      key_size: 2048,
+      algorithm: 'rsa',
+      public_key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A',
+      dkim_txt: 'v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A',
+      active: true,
+    });
+    expect(key).not.toHaveProperty('id');
+    expect(key).not.toHaveProperty('created');
+    expect(key).not.toHaveProperty('modified');
+  });
+
+  it('parses Mailcow length ">= 8192" and still accepts key_length', () => {
+    expect(normalizeDKIMKey('example.com', {
+      dkim_selector: 'dkim',
+      length: '>= 8192',
+      pubkey: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A',
+    })?.key_size).toBe(8192);
+    expect(normalizeDKIMKey('example.com', {
+      dkim_selector: 'dkim',
+      key_length: '2048',
+      dkim_txt: MAILCOW_DKIM.dkim_txt,
+    })?.key_size).toBe(2048);
   });
 
   it('returns null for empty Mailcow objects', () => {

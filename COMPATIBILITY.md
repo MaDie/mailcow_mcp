@@ -2,20 +2,21 @@
 
 This document records which [mailcow-dockerized](https://github.com/mailcow/mailcow-dockerized) releases this MCP server can talk to.
 
-**Do not treat this as a live test report.** No Mailcow instance (including the production host on `2026-09`) was called from this environment. Every claim below comes from comparing the paths and payloads this repo actually sends with Mailcow source and OpenAPI at published git tags. Anything not compared that way is marked **unverified**.
+Source claims come from comparing the paths and payloads this repo actually sends with Mailcow source and OpenAPI at published git tags. **Live read checks** on production Mailcow `2026-10` are listed below and were reported by the owner — this environment did not call that host. Writes and unlisted tools remain **unverified** live. Anything not compared or live-checked that way is marked **unverified**.
 
 ## Summary
 
 | Item | Result |
 |------|--------|
-| Newest Mailcow release this build is versioned against | **2026-09** (npm package `2026.9.3`) |
-| Newest Mailcow tag whose API source was compared | **2026-10** (used routes unchanged vs 2026-09 except an unrelated `ui_theme` add) |
+| Newest Mailcow release this build is versioned against | **2026-10** (npm package `2026.10.0`) |
+| Newest Mailcow tag whose API source was compared | **2026-10** (used routes/fields unchanged vs `2026-09` except an unrelated `ui_theme` add) |
 | Oldest Mailcow tag whose `json_api.php` was compared | **2022-01** |
 | Minimum source-verified Mailcow for the working read/create subset | **2022-01** |
 | Minimum Mailcow for `get_mailcow_version` (`GET /api/v1/get/status/version`) | **2022-05** (PR [mailcow#4557](https://github.com/mailcow/mailcow-dockerized/pull/4557), merged 2022-05-04; absent on tag `2022-04`) |
 | Fully supported Mailcow release | **None** — several registered tools call routes or field names that Mailcow has never exposed |
 | Releases before `2022-01` | **Unverified** (tags were not downloaded) |
-| Live behaviour on production `2026-09` | **Unverified** |
+| Live read checks on production `2026-10` | **OK:** `get_mailcow_version`, `list_domains`, `list_queue_items`, `list_aliases`, `list_dkim_keys` |
+| Live writes / other tools on production `2026-10` | **Unverified** |
 
 There is no Mailcow release range in which *every* registered MCP tool works. The matrix below is therefore **partially supported** for every compared tag. The broken tools are implementation mismatches that appear on all compared releases, not version-specific removals.
 
@@ -24,9 +25,10 @@ There is no Mailcow release range in which *every* registered MCP tool works. Th
 1. Inventories of HTTP paths come from `src/api/endpoints.ts` and the API classes under `src/api/` that registered tools call (`src/index.ts`).
 2. Unused API modules (`quarantine`, `oauth2`, `app-passwords`, `rspamd`, `tls-policy`, `spam`, `system` backup, `resources`) are **not** in the matrix. They are not registered as MCP tools.
 3. For each tag below, `data/web/json_api.php` and (when present) `data/web/api/openapi.yaml` were downloaded from `github.com/mailcow/mailcow-dockerized` via the GitHub contents API.
-4. Field names for mailbox/alias/filter/DKIM/mailq were checked in `data/web/inc/functions.mailbox.inc.php`, `functions.dkim.inc.php`, and `functions.mailq.inc.php` at `2026-09`, with targeted greps on earlier tags for `password2`, `sogo_visible`, `authsource`, and DKIM add fields.
-5. OpenAPI is incomplete compared with `json_api.php` (for example `/api/v1/get/domain/all`, `/api/v1/get/alias/all`, `/api/v1/get/filters/all`, and `/api/v1/get/logs/{type}/{count}` are implemented but not all listed as those exact paths in OpenAPI `2026-09`). **`json_api.php` is treated as the source of truth.**
-6. Not verified: HTTP status codes against a running Mailcow, API-key role differences beyond what the PHP `$_SESSION['mailcow_cc_role'] == "admin"` checks say, letter-suffix tags such as `2026-09a` as distinct from `2026-09`, and any release not listed in the matrix.
+4. Field names for mailbox/alias/filter/DKIM/mailq were checked in `data/web/inc/functions.mailbox.inc.php`, `functions.dkim.inc.php`, and `functions.mailq.inc.php` at `2026-09` and re-checked at `2026-10` (those three files are **byte-identical** between the tags). Targeted greps on earlier tags cover `password2`, `sogo_visible`, `authsource`, and DKIM add fields.
+5. OpenAPI is incomplete compared with `json_api.php` (for example `/api/v1/get/domain/all`, `/api/v1/get/alias/all`, `/api/v1/get/filters/all`, and `/api/v1/get/logs/{type}/{count}` are implemented but not all listed as those exact paths). OpenAPI `2026-10` was not in the `2026-09`…`2026-10` GitHub compare (unchanged). **`json_api.php` is treated as the source of truth.**
+6. `2026-09` → `2026-10` (26 commits, 51 files): the only `json_api.php` change is `edit` / `ui_theme`. `functions.customize.inc.php` gained theme get/edit. No used tool route or field changed. Container/UI updates (Rspamd, SOGo, nginx, PHP, Bootstrap themes) are unrelated to this MCP server.
+7. Not verified: HTTP status codes against a running Mailcow from this environment, API-key role differences beyond what the PHP `$_SESSION['mailcow_cc_role'] == "admin"` checks say, letter-suffix tags such as `2026-09a` / `2026-10a` as distinct from the monthly tag, and any release not listed in the matrix.
 
 Compared tags: `2022-01`, `2022-04`, `2022-05` (version case only), `2022-12`, `2023-05`, `2023-12`, `2024-04`, `2024-11`, `2025-03`, `2025-09`, `2026-01`, `2026-09`, `2026-10`. Intermediate tags (`2026-09a`, `2026-07*`, …) were **not** downloaded; they are assumed to match the nearest compared major monthly tag and are marked unverified if that assumption matters.
 
@@ -40,8 +42,8 @@ Legend:
 
 | Mailcow release | Status | What changes vs this MCP server |
 |-----------------|--------|----------------------------------|
-| `2026-10` | partial (source only) | Same used `json_api.php` routes as `2026-09`. Diff vs `2026-09` adds `ui_theme` only. **Not live-tested.** |
-| `2026-09` / `2026-09a` | **partial — production target** | Baseline for package version `2026.9.3`. `2026-09` source was read in full for the files listed above. `2026-09a` itself was **not** downloaded (unverified letter suffix). |
+| `2026-10` | **partial — production target** | Baseline for package version `2026.10.0`. Same used `json_api.php` routes/fields as `2026-09`. Diff vs `2026-09` adds `edit` / `ui_theme` only (unused). **Source-verified.** Live reads OK: `get_mailcow_version`, `list_domains`, `list_queue_items`, `list_aliases`, `list_dkim_keys`. |
+| `2026-09` / `2026-09a` | partial | Previous target (`2026.9.x`). `2026-09` source was read in full for the files listed above. `2026-09a` itself was **not** downloaded (unverified letter suffix). Used routes match `2026-10`. |
 | `2026-07` … `2026-03` | unverified | Monthly tags exist; files were not fetched. No evidence they removed the used routes. |
 | `2026-01` | partial | Same used routes as `2026-09` in `json_api.php` (domain, mailbox, alias, filter, dkim, logs, mailq, syncjob write, syncjobs read, status/version). |
 | `2025-12` … `2025-10` | unverified | Not downloaded. |
@@ -74,7 +76,7 @@ Mailcow parses `/api/v1/{action}/{category}/{object}/{extra}` in `json_api.php`.
 
 | MCP tools | Method + path this repo sends | Mailcow route | Notes |
 |-----------|-------------------------------|---------------|-------|
-| `list_domains`, `test_api_connection` | `GET /api/v1/get/domain/all` | `get` / `domain` / `all` | Implemented. Not listed as that exact path in OpenAPI `2026-09`. |
+| `list_domains`, `test_api_connection` | `GET /api/v1/get/domain/all` | `get` / `domain` / `all` | Implemented. Not listed as that exact path in OpenAPI. Live `list_domains` OK on production `2026-10`. |
 | `get_domain` | `GET /api/v1/get/domain/{id}` | `get` / `domain` / `{id}` | OpenAPI `2026-09`: `/api/v1/get/domain/{id}`. |
 | `create_domain` | `POST /api/v1/add/domain` | `add` / `domain` | Body is `attr`. OpenAPI fields include `active`, `aliases`, `defquota`, `mailboxes`, `quota`, `maxquota`. Omitted `active` becomes `intval(undefined) === 0` (inactive). **Live create result unverified.** |
 | `update_domain` | `POST /api/v1/edit/domain` with `{ items: [domain], attr }` | `edit` / `domain` | **Fixed in 2026.9.1** from `json_api.php` (edit unwraps only `items` + `attr`). Booleans sent as `"1"`/`"0"`. Live edit on `2026-09` **unverified**. |
@@ -84,7 +86,7 @@ Mailcow parses `/api/v1/{action}/{category}/{object}/{extra}` in `json_api.php`.
 | `create_mailbox` | `POST /api/v1/add/mailbox` | `add` / `mailbox` | Sends `password2` (copied from `password` when omitted). `password2` exists in mailbox functions since at least `2022-01`. |
 | `update_mailbox` | `POST /api/v1/edit/mailbox` with `{ items: [username], attr }` | `edit` / `mailbox` | **Fixed in 2026.9.1** from `json_api.php`. Password edits also send `password2`. Live edit **unverified**. |
 | `delete_mailbox` | `POST /api/v1/delete/mailbox` with `["user@domain"]` | `delete` / `mailbox` | **Fixed in 2026.9.1.** Whole-body-as-items; items are usernames. Independently live-confirmed by a third-party fork (mailbox delete as a JSON username array). Their code was not copied. |
-| `list_aliases` | `GET /api/v1/get/alias/all` | `get` / `alias` / `all` | Implemented. OpenAPI documents `/get/alias/{id}`. |
+| `list_aliases` | `GET /api/v1/get/alias/all` | `get` / `alias` / `all` | Implemented. OpenAPI documents `/get/alias/{id}`. Live list OK on production `2026-10`. |
 | `get_alias` | `GET /api/v1/get/alias/{id}` | `get` / `alias` / `{id}` | Matches. |
 | `create_alias` | `POST /api/v1/add/alias` | `add` / `alias` | Sends `active` / `sogo_visible` as `"1"`/`"0"`. `sogo_visible` exists since at least `2022-01`. |
 | `update_alias` | `POST /api/v1/edit/alias` with `{ items: [id], attr }` | `edit` / `alias` | Matches `json_api.php`. Independently live-confirmed by a third-party fork (alias edit `{items,attr}`). Their code was not copied. |
@@ -93,7 +95,7 @@ Mailcow parses `/api/v1/{action}/{category}/{object}/{extra}` in `json_api.php`.
 | `create_sieve_filter` | `POST /api/v1/add/filter` | `add` / `filter` | Fields `username`, `script_desc`, `script_data`, `filter_type`, `active` match `functions.mailbox.inc.php` at `2026-09`. |
 | `update_sieve_filter` | `POST /api/v1/edit/filter` with `{ items, attr }` | `edit` / `filter` | Matches expected JSON shape. |
 | `delete_sieve_filter` | `POST /api/v1/delete/filter` with `["id"]` | `delete` / `filter` | **Fixed in 2026.9.1.** Same whole-body-as-items pattern as alias (`id` => `$items`). Live delete **unverified**. |
-| `list_dkim_keys`, `get_dkim_key` | `GET /api/v1/get/dkim/{domain}` (after listing domains) | `get` / `dkim` / `{domain}` | Correct. Mailcow has no DKIM list route; this server walks domains. Response fields `dkim_selector`, `key_length`/`dkim_txt` (via Redis) date from at least `2022-01`. |
+| `list_dkim_keys`, `get_dkim_key` | `GET /api/v1/get/dkim/{domain}` (after listing domains) | `get` / `dkim` / `{domain}` | Correct. Mailcow has no DKIM list route; this server walks domains. `dkim('details')` / OpenAPI return `dkim_selector`, `length` (bits as a string, e.g. `"2048"`), `pubkey`, `dkim_txt`, optional `privkey`. **No `id`, `created`, or `modified`.** Mapped in `2026.10.0` (`length` → `key_size`; dates/`key_id` omitted when absent). Live list OK on production `2026-10`. |
 | `create_dkim_key` | `POST /api/v1/add/dkim` with `{ domains, dkim_selector, key_size }` | `add` / `dkim` | **Fixed in 2026.9.2** from `functions.dkim.inc.php` / OpenAPI (`domains`, `dkim_selector`, `key_size`). Live create **unverified**. There is no `/edit/dkim`; rotate a key with `delete_dkim_key` then `create_dkim_key`. |
 | `get_logs` and siblings | `GET /api/v1/get/logs/{type}/{count}` | `get` / `logs` / `{type}` | Types this server maps: `postfix`, `dovecot`, `rspamd-history`, `sogo`, `api`, `acme`, `netfilter`, `watchdog`, `autodiscover`, `ratelimited`. All of those cases exist from `2022-01`. `cron` exists from `2025-03` and is unused. |
 | `health_check`, `get_config` | (none) | — | Local process only. |
@@ -103,7 +105,7 @@ Mailcow parses `/api/v1/{action}/{category}/{object}/{extra}` in `json_api.php`.
 
 | MCP tool | Path | First tag with the route | Notes |
 |----------|------|--------------------------|-------|
-| `get_mailcow_version` | `GET /api/v1/get/status/version` | **2022-05** | Admin-only (`$_SESSION['mailcow_cc_role'] == "admin"`). Returns `{"version": $GLOBALS['MAILCOW_GIT_VERSION']}`. OpenAPI example still shows `"2022-04"`. Unauthenticated / non-admin behaviour was **not** live-tested; PHP issues no JSON when the role check fails (empty body). |
+| `get_mailcow_version` | `GET /api/v1/get/status/version` | **2022-05** | Admin-only (`$_SESSION['mailcow_cc_role'] == "admin"`). Returns `{"version": $GLOBALS['MAILCOW_GIT_VERSION']}`. OpenAPI example still shows `"2022-04"`. Live OK on production `2026-10` (admin API key). Unauthenticated / non-admin behaviour was **not** live-tested; PHP issues no JSON when the role check fails (empty body). |
 
 ### Missing or wrong on every compared tag
 
@@ -114,7 +116,7 @@ Mailcow parses `/api/v1/{action}/{category}/{object}/{extra}` in `json_api.php`.
 | `create_sync_job` | `POST /api/v1/add/syncjob` with `{ host, port, user, password, encryption, … }` | Route exists (`add` / `syncjob`). Mailcow fields are `host1`, `port1`, `user1`, `password1`, `enc1`, `mins_interval`, `username`, … (OpenAPI `2026-09` and add-example in `json_api` log). Our names do not match. | Same field names at `2026-09`; earlier OpenAPI examples were **not** fully diffed (**unverified** whether `host1` existed under another name before `2022-01`). |
 | `update_sync_job`, `activate_sync_job`, `deactivate_sync_job` | `POST /api/v1/edit/syncjob` with `{ ...updates, id }` | Route exists. Edit JSON must be `{ items, attr }`. `active` must be `"1"`/`"0"` for `intval`. | All compared tags. |
 | `delete_sync_job` | `POST /api/v1/delete/syncjob` with `[id]` | **Fixed in 2026.9.1** (`json_api.php` `delete` / `syncjob` → `id` => `$items`). Create/update field names are still wrong. | All compared tags. |
-| `list_queue_items`, `get_queue_item` | `GET /api/v1/get/mailq/all` | **Fixed in 2026.9.2.** GET `mailq` only handles `object === "all"`. Live list **unverified**. | All compared tags. |
+| `list_queue_items`, `get_queue_item` | `GET /api/v1/get/mailq/all` | **Fixed in 2026.9.2.** GET `mailq` only handles `object === "all"`. Live `list_queue_items` OK on production `2026-10`. | All compared tags. |
 | `flush_queue` | `POST /api/v1/edit/mailq` with `{}` | `mailq('edit')` requires `attr.action` in `flush` / `super_delete`. OpenAPI example is `{ action: flush }` (top-level). PHP JSON unwrap only copies `attr`/`items`. **Which shape works live is unverified.** Our empty body matches neither. | All compared tags. |
 | `hold_queue_item` | `POST /api/v1/edit/mailq` with `{ items: [qid], attr: { action: hold } }` | **Fixed in 2026.9.2** from `json_api.php` edit unwrap + `functions.mailq.inc.php` (`hold`). Live hold **unverified**. | All compared tags. |
 | `release_queue_item` | `{ items: [qid], attr: { action: unhold } }` | **Fixed in 2026.9.2.** Mailcow action name is **`unhold`**. Tool still named `release_queue_item`; requires `confirm`. Live unhold **unverified**. | All compared tags. |
@@ -132,7 +134,7 @@ Only fields this server sends or reads are listed. “Unverified first tag” me
 | `sogo_visible` | create/update alias | Present in mailbox functions at the same tags as `password2`. **Not removed.** |
 | `authsource` | (not sent) | Absent at `2023-12`, present at `2025-03` and `2026-09`. We omit it; Mailcow defaults to `mailcow`. No tool break. |
 | DKIM add: `domains`, `dkim_selector`, `key_size` | create DKIM | Same names at `2022-01` and `2026-09`. **This server sends these keys as of 2026.9.2.** |
-| DKIM get: `dkim_selector`, `dkim_txt` / pubkey material | get/list DKIM | `dkim('details')` at `2026-09` fills `dkim_selector` (and optional `privkey`). OpenAPI `/get/dkim/{domain}` exists at `2026-09`. |
+| DKIM get: `dkim_selector`, `length`, `pubkey`, `dkim_txt` | get/list DKIM | `dkim('details')` at `2026-09` and `2026-10` (unchanged) fills `length` (not `key_size`), `dkim_selector`, `pubkey`, `dkim_txt`, optional `privkey`. No `id` / `created` / `modified`. OpenAPI `/get/dkim/{domain}` example matches. **Mapped in 2026.10.0.** |
 | Filter add: `username`, `script_desc`, `script_data`, `filter_type` | sieve tools | Present in mailbox functions at `2026-09`. Earlier-tag field names: **unverified** (route `add/filter` exists since `2022-01`). |
 | Sync job add: `host1`, `user1`, `password1`, `enc1`, … | sync job create | Documented in OpenAPI `2026-09`. This server’s TypeScript types use `host`, `user`, `password`, `encryption`. |
 | Mailq edit actions | queue tools | `2026-09` `functions.mailq.inc.php`: `hold`, `unhold`, `deliver`, `flush`, `super_delete`. No `release`. |
@@ -144,7 +146,7 @@ No used field was found to have been **removed** between `2022-01` and `2026-10`
 
 ## Tools that fail on every compared release
 
-These are expected to break against production Mailcow `2026-09` for the reasons above. That expectation is from source, not a live call.
+These are expected to break against production Mailcow `2026-10` for the reasons above. That expectation is from source, not a live call.
 
 | Tools | Why |
 |-------|-----|
@@ -153,7 +155,7 @@ These are expected to break against production Mailcow `2026-09` for the reasons
 
 Removed in 2026.9.2 (not registered): `/user` tools (use mailbox tools) and `update_dkim_key` (rotate via delete + create).
 
-Domain/mailbox/alias **list, get, create, edit, and delete** match the `json_api.php` write shapes. Sieve, logs, DKIM get/create/delete, sync-job GET/delete, queue GET/delete/hold/unhold match source. **All of these 2026.9.2 path/body fixes are source-verified, not live-verified.** Live success on production `2026-09` remains unverified except where a third-party fork reported a live Mailcow test of mailbox/alias delete and alias edit (their implementation was not copied).
+Domain/mailbox/alias **list, get, create, edit, and delete** match the `json_api.php` write shapes. Sieve, logs, DKIM get/create/delete, sync-job GET/delete, queue GET/delete/hold/unhold match source. **2026.9.2 path/body fixes remain source-verified.** Live reads on production `2026-10`: `get_mailcow_version`, `list_domains`, `list_queue_items`, `list_aliases`, `list_dkim_keys`. Other tools (including all writes) remain unverified live except where a third-party fork reported a live Mailcow test of mailbox/alias delete and alias edit (their implementation was not copied).
 
 ## Unused modules (not compatibility-tested)
 
@@ -161,4 +163,4 @@ Domain/mailbox/alias **list, get, create, edit, and delete** match the `json_api
 
 ## Versioning
 
-See [README](README.md#versioning) and [CHANGELOG.md](CHANGELOG.md). Package version `YYYY.MM.PATCH` names the Mailcow `YYYY-MM` release this tree was source-verified against. `2026.9.3` is an MCP-only PATCH on the `2026-09` target (npm semver cannot encode `2026.09.0`).
+See [README](README.md#versioning) and [CHANGELOG.md](CHANGELOG.md). Package version `YYYY.MM.PATCH` names the Mailcow `YYYY-MM` release this tree was source-verified against. `2026.10.0` is the `2026-10` target (npm semver cannot encode a leading-zero month; `2026-09` was `2026.9.x`).

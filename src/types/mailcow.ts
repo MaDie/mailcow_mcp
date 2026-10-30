@@ -191,16 +191,19 @@ export interface UpdateUserRequest {
 
 // DKIM Types
 export interface MailcowDKIM {
-  id: number;
+  /** Mailcow GET /dkim has no numeric id — omit rather than invent 0 */
+  id?: number;
   domain: string;
   selector: string;
-  key_size: number;
+  /** Bits from Mailcow `length` (or key_length / key_size). Omit when unknown. */
+  key_size?: number;
   algorithm: 'rsa' | 'ed25519';
   public_key: string;
   private_key?: string;
   active: boolean;
-  created: Date;
-  modified: Date;
+  /** Mailcow DKIM details have no timestamps — omit rather than epoch */
+  created?: Date;
+  modified?: Date;
   /** Raw Mailcow TXT value (`v=DKIM1;k=rsa;p=...`), if the API provided one */
   dkim_txt?: string;
 }
@@ -590,15 +593,11 @@ export function isMailcowDKIM(obj: unknown): obj is MailcowDKIM {
   return (
     typeof obj === 'object' &&
     obj !== null &&
-    'id' in obj &&
     'domain' in obj &&
     'selector' in obj &&
-    'key_size' in obj &&
     'algorithm' in obj &&
     'public_key' in obj &&
-    'active' in obj &&
-    'created' in obj &&
-    'modified' in obj
+    'active' in obj
   );
 }
 
