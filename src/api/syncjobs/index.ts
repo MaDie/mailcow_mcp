@@ -7,15 +7,19 @@ import {
 } from '../../types';
 import { APIAction } from '../../types/api';
 import { buildSyncJobEndpoint } from '../endpoints';
+import { asObjectList, mailcowDeleteItems } from '../mailcow-response';
 
 export class JobsAPI {
   constructor(private client: APIClient) {}
 
-  async listSyncJobs(params?: ListSyncJobsParams): Promise<MailcowSyncJob[]> {
-    return this.client.get<MailcowSyncJob[]>(
-      buildSyncJobEndpoint(APIAction.LIST),
-      { params }
-    );
+  async listSyncJobs(
+    params?: ListSyncJobsParams & { username?: string }
+  ): Promise<MailcowSyncJob[]> {
+    const username = params?.username;
+    const path = username
+      ? buildSyncJobEndpoint(APIAction.GET, username)
+      : buildSyncJobEndpoint(APIAction.LIST);
+    return asObjectList<MailcowSyncJob>(await this.client.get<unknown>(path));
   }
 
   async createSyncJob(job: CreateSyncJobRequest): Promise<MailcowSyncJob> {
@@ -36,15 +40,16 @@ export class JobsAPI {
   async deleteSyncJob(jobId: number): Promise<void> {
     await this.client.post<void>(
       buildSyncJobEndpoint(APIAction.DELETE),
-      { id: jobId }
+      mailcowDeleteItems([jobId])
     );
   }
 
   async getSyncJobDetails(jobId: number): Promise<MailcowSyncJob> {
-    const jobs = await this.client.get<MailcowSyncJob[]>(
-      buildSyncJobEndpoint(APIAction.GET)
+    // Job ids are not a GET object; list all (no_log) and pick the row.
+    const jobs = asObjectList<MailcowSyncJob>(
+      await this.client.get<unknown>(buildSyncJobEndpoint(APIAction.LIST))
     );
-    const job = jobs.find((j) => j.id === jobId);
+    const job = jobs.find((j) => Number(j.id) === Number(jobId));
     if (!job) {
       throw new Error(`Sync job not found: ${jobId}`);
     }

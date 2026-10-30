@@ -1,4 +1,4 @@
-import { z, ZodSchema } from 'zod';
+import { z, ZodType } from 'zod';
 import validator from 'validator';
 
 export function validateEmail(email: string): boolean {
@@ -14,7 +14,7 @@ export function validateAPIKey(apiKey: string): boolean {
   return apiKey.length >= 32 && /^[a-zA-Z0-9]+$/.test(apiKey);
 }
 
-export function validateWithSchema<T>(data: unknown, schema: ZodSchema<T>): { success: boolean; data?: T; errors?: string[] } {
+export function validateWithSchema<T>(data: unknown, schema: ZodType<T>): { success: boolean; data?: T; errors?: string[] } {
   try {
     const validated = schema.parse(data);
     return { success: true, data: validated };
@@ -22,7 +22,7 @@ export function validateWithSchema<T>(data: unknown, schema: ZodSchema<T>): { su
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        errors: error.errors.map(err => `${err.path.join('.')}: ${err.message}`),
+        errors: error.issues.map(err => `${err.path.join('.')}: ${err.message}`),
       };
     }
     return {

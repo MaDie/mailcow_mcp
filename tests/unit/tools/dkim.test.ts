@@ -7,7 +7,6 @@ import {
   ListDKIMKeysTool, 
   GetDKIMKeyTool, 
   CreateDKIMKeyTool, 
-  UpdateDKIMKeyTool, 
   DeleteDKIMKeyTool 
 } from '../../../src/tools/dkim';
 import { DKIMAPI } from '../../../src/api/dkim';
@@ -64,7 +63,6 @@ describe('DKIM Management Tools', () => {
       listDKIMKeys: jest.fn(),
       getDKIMKey: jest.fn(),
       createDKIMKey: jest.fn(),
-      updateDKIMKey: jest.fn(),
       deleteDKIMKey: jest.fn(),
       generateDKIMDNSRecord: jest.fn(),
       validateDKIMKey: jest.fn()
@@ -357,7 +355,8 @@ describe('DKIM Management Tools', () => {
 
     it('should have correct tool metadata', () => {
       expect(tool.name).toBe('create_dkim_key');
-      expect(tool.description).toBe('Create a new DKIM key for a domain in the Mailcow server');
+      expect(tool.description).toContain('Create a new DKIM key');
+      expect(tool.description).toContain('no /edit/dkim');
       expect(tool.inputSchema.required).toContain('domain');
       expect(tool.inputSchema.required).toContain('selector');
     });
@@ -460,112 +459,6 @@ describe('DKIM Management Tools', () => {
     });
   });
 
-  describe('UpdateDKIMKeyTool', () => {
-    let tool: UpdateDKIMKeyTool;
-
-    beforeEach(() => {
-      tool = new UpdateDKIMKeyTool(logger, dkimAPI);
-      jest.spyOn(tool as any, 'validatePermissions').mockReturnValue(true);
-      jest.spyOn(tool as any, 'validateInput').mockReturnValue({ valid: true, errors: [], warnings: [] });
-    });
-
-    it('should have correct tool metadata', () => {
-      expect(tool.name).toBe('update_dkim_key');
-      expect(tool.description).toBe('Update settings for an existing DKIM key');
-      expect(tool.inputSchema.required).toContain('domain');
-      expect(tool.inputSchema.required).toContain('selector');
-    });
-
-    it('should update DKIM key with partial data', async () => {
-      const updatedKey = { ...sampleDKIMKeys[0], active: false };
-      const dnsRecord = 'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA123456789abcdef...';
-      
-      (dkimAPI.getDKIMKey as jest.Mock).mockResolvedValue(sampleDKIMKeys[0]);
-      (dkimAPI.updateDKIMKey as jest.Mock).mockResolvedValue(updatedKey);
-      (dkimAPI.generateDKIMDNSRecord as jest.Mock).mockReturnValue(dnsRecord);
-
-      const input = {
-        domain: 'example.com',
-        selector: 'default',
-        active: false
-      };
-
-      const result = await tool.execute(input, context);
-
-      expect(result.success).toBe(true);
-      expect(dkimAPI.getDKIMKey).toHaveBeenCalledWith('example.com', 'default');
-      expect(dkimAPI.updateDKIMKey).toHaveBeenCalledWith('example.com', 'default', {
-        active: false
-      });
-      
-      const content = result.result!.content[0];
-      const data = JSON.parse((content as any).text);
-      expect(data.message).toContain('updated successfully');
-      expect(data.updated_fields).toEqual(['active']);
-    });
-
-    it('should update multiple fields', async () => {
-      const updatedKey = { 
-        ...sampleDKIMKeys[0], 
-        active: false, 
-        key_size: 4096,
-        algorithm: 'ed25519'
-      };
-      const dnsRecord = 'v=DKIM1; k=ed25519; p=MCowBQYDK2VwAyEA123456789abcdef...';
-      
-      (dkimAPI.getDKIMKey as jest.Mock).mockResolvedValue(sampleDKIMKeys[0]);
-      (dkimAPI.updateDKIMKey as jest.Mock).mockResolvedValue(updatedKey);
-      (dkimAPI.generateDKIMDNSRecord as jest.Mock).mockReturnValue(dnsRecord);
-
-      const input = {
-        domain: 'example.com',
-        selector: 'default',
-        active: false,
-        key_size: 4096,
-        algorithm: 'ed25519'
-      };
-
-      const result = await tool.execute(input, context);
-
-      expect(result.success).toBe(true);
-      expect(dkimAPI.updateDKIMKey).toHaveBeenCalledWith('example.com', 'default', {
-        active: false,
-        key_size: 4096,
-        algorithm: 'ed25519'
-      });
-    });
-
-    it('should handle DKIM key not found', async () => {
-      (dkimAPI.getDKIMKey as jest.Mock).mockResolvedValue(null);
-
-      const input = {
-        domain: 'missing.com',
-        selector: 'default',
-        active: false
-      };
-
-      const result = await tool.execute(input, context);
-
-      expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(MCPErrorCode.RESOURCE_NOT_FOUND);
-    });
-
-    it('should require at least one update parameter', async () => {
-      (dkimAPI.getDKIMKey as jest.Mock).mockResolvedValue(sampleDKIMKeys[0]);
-
-      const input = {
-        domain: 'example.com',
-        selector: 'default'
-      };
-
-      const result = await tool.execute(input, context);
-
-      expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(MCPErrorCode.INVALID_PARAMS);
-      expect(result.error?.message).toContain('No update parameters provided');
-    });
-  });
-
   describe('DeleteDKIMKeyTool', () => {
     let tool: DeleteDKIMKeyTool;
 
@@ -577,7 +470,7 @@ describe('DKIM Management Tools', () => {
 
     it('should have correct tool metadata', () => {
       expect(tool.name).toBe('delete_dkim_key');
-      expect(tool.description).toContain('Delete a DKIM key from the Mailcow server');
+      expect(tool.description).toContain('Delete a DKIM key');
       expect(tool.inputSchema.required).toContain('domain');
       expect(tool.inputSchema.required).toContain('selector');
       expect(tool.inputSchema.required).toContain('confirm');

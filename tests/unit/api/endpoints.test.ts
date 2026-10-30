@@ -1,9 +1,12 @@
 import {
+  API_ENDPOINTS,
   buildDomainEndpoint,
   buildMailboxEndpoint,
   buildDKIMEndpoint,
   buildAliasEndpoint,
   buildFilterEndpoint,
+  buildSyncJobEndpoint,
+  buildQueueEndpoint,
 } from '../../../src/api/endpoints';
 import { APIAction } from '../../../src/types/api';
 
@@ -39,5 +42,23 @@ describe('endpoint builder GET actions', () => {
     expect(buildDomainEndpoint(APIAction.LIST)).toBe('/api/v1/get/domain/all');
     expect(buildMailboxEndpoint(APIAction.CREATE)).toBe('/api/v1/add/mailbox');
     expect(buildDKIMEndpoint(APIAction.DELETE)).toBe('/api/v1/delete/dkim');
+  });
+
+  it('exposes the Mailcow status version endpoint', () => {
+    expect(API_ENDPOINTS.STATUS.VERSION).toBe('/api/v1/get/status/version');
+  });
+
+  it('builds syncjobs GET as /syncjobs/all/no_log and per-mailbox /no_log', () => {
+    expect(buildSyncJobEndpoint(APIAction.LIST)).toBe(
+      '/api/v1/get/syncjobs/all/no_log'
+    );
+    expect(buildSyncJobEndpoint(APIAction.GET, 'user@example.com')).toBe(
+      '/api/v1/get/syncjobs/user%40example.com/no_log'
+    );
+  });
+
+  it('builds mailq GET as /mailq/all', () => {
+    expect(buildQueueEndpoint(APIAction.LIST)).toBe('/api/v1/get/mailq/all');
+    expect(buildQueueEndpoint(APIAction.GET)).toBe('/api/v1/get/mailq/all');
   });
 });
