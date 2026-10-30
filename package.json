@@ -1,6 +1,6 @@
 {
   "name": "mailcow-mcp",
-  "version": "2026.9.3",
+  "version": "2026.10.0",
   "description": "Model Context Protocol server for Mailcow email server",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -18,9 +18,9 @@ Get server health status and basic metrics.
   "timestamp": "2023-12-07T10:30:00.000Z",
   "server": {
     "name": "mailcow-mcp",
-    "version": "2026.9.3",
+    "version": "2026.10.0",
     "versioning_scheme": "YYYY.MM.PATCH",
-    "tested_mailcow": "2026-09",
+    "tested_mailcow": "2026-10",
     "uptime": 3600
   },
   "api": {
@@ -67,13 +67,13 @@ Report this MCP package version, the Mailcow release it was source-verified agai
 {
   "mcp": {
     "name": "mailcow-mcp",
-    "version": "2026.9.3",
+    "version": "2026.10.0",
     "versioning_scheme": "YYYY.MM.PATCH",
-    "tested_mailcow": "2026-09"
+    "tested_mailcow": "2026-10"
   },
   "connected_mailcow": {
     "reachable": true,
-    "version": "2026-09",
+    "version": "2026-10",
     "matches_tested": true,
     "warning": null
   },

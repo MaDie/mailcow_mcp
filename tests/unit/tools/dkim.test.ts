@@ -248,6 +248,54 @@ describe('DKIM Management Tools', () => {
       expect(data.keys[0].public_key_preview).toContain('...');
       expect(data.keys[0].public_key_preview.length).toBeLessThan(100);
     });
+
+    it('omits invented key_id 0, epoch dates, and missing key_size', async () => {
+      (dkimAPI.listDKIMKeys as jest.Mock).mockResolvedValue([
+        {
+          domain: 'example.com',
+          selector: 'dkim',
+          algorithm: 'rsa',
+          public_key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A',
+          active: true,
+          dkim_txt: 'v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A',
+        },
+      ]);
+
+      const result = await tool.execute({}, context);
+
+      expect(result.success).toBe(true);
+      const data = JSON.parse((result.result!.content[0] as any).text);
+      expect(data.keys[0]).toEqual({
+        domain: 'example.com',
+        selector: 'dkim',
+        algorithm: 'rsa',
+        active: true,
+        public_key_preview: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...',
+      });
+      expect(data.keys[0]).not.toHaveProperty('key_size');
+      expect(data.keys[0]).not.toHaveProperty('created');
+      expect(data.keys[0]).not.toHaveProperty('modified');
+      expect(data.keys[0]).not.toHaveProperty('key_id');
+    });
+
+    it('maps Mailcow length onto key_size when present', async () => {
+      (dkimAPI.listDKIMKeys as jest.Mock).mockResolvedValue([
+        {
+          domain: 'example.com',
+          selector: 'dkim',
+          algorithm: 'rsa',
+          key_size: 2048,
+          public_key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A',
+          active: true,
+        },
+      ]);
+
+      const result = await tool.execute({}, context);
+
+      expect(result.success).toBe(true);
+      const data = JSON.parse((result.result!.content[0] as any).text);
+      expect(data.keys[0].key_size).toBe(2048);
+    });
   });
 
   describe('GetDKIMKeyTool', () => {

@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Version numbers follow `YYYY.MM.PATCH` (see [README](README.md#versioning)):
 `YYYY.MM` is the newest [mailcow-dockerized](https://github.com/mailcow/mailcow-dockerized) release this build was source-verified against. npm semver forbids a leading zero in the month, so Mailcow `2026-09` is published as `2026.9.0`, not `2026.09.0`.
 
+## [2026.10.0] - 2026-10-30
+
+### Changed
+
+- Compatibility target moved from Mailcow **2026-09** to **2026-10**. Package version `2026.9.3` → `2026.10.0`.
+- [COMPATIBILITY.md](COMPATIBILITY.md) re-diffed `mailcow-dockerized` `2026-09` → `2026-10` for every route/field registered tools use (`json_api.php`, OpenAPI, `functions.mailbox.inc.php`, `functions.dkim.inc.php`, `functions.mailq.inc.php`). Used routes and fields are unchanged. The only `json_api.php` addition is unused `edit` / `ui_theme`.
+- Live read checks on production `2026-10` recorded: `get_mailcow_version`, `list_domains`, `list_queue_items`, `list_aliases`, `list_dkim_keys`.
+
+### Fixed
+
+- **DKIM list/get display:** Mailcow `GET /api/v1/get/dkim/{domain}` returns `length` (string bits), `dkim_selector`, `pubkey`, `dkim_txt` — not `key_size`, `id`, `created`, or `modified`. `length` is now mapped to `key_size`; dates and `key_id` are omitted when Mailcow does not send them (no more `0` / `1970-01-01`).
+
+### Compatibility notes
+
+No used Mailcow API route or write field changed between `2026-09` and `2026-10`. Sync-job create/edit field names and queue flush body remain mismatched. Details: [COMPATIBILITY.md](COMPATIBILITY.md).
+
 ## [2026.9.3] - 2026-10-30
 
 ### Changed

@@ -11,8 +11,8 @@
  */
 
 export const MCP_PACKAGE_NAME = 'mailcow-mcp';
-export const MCP_PACKAGE_VERSION = '2026.9.3';
-export const TESTED_MAILCOW_RELEASE = '2026-09';
+export const MCP_PACKAGE_VERSION = '2026.10.0';
+export const TESTED_MAILCOW_RELEASE = '2026-10';
 export const VERSIONING_SCHEME = 'YYYY.MM.PATCH';
 
 export const MAILCOW_VERSION_ENDPOINT = '/api/v1/get/status/version';

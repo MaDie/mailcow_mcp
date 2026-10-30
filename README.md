@@ -6,7 +6,7 @@ TypeScript [Model Context Protocol](https://modelcontextprotocol.io/) server for
 [![MCP](https://img.shields.io/badge/MCP_SDK-1.32-green.svg)](https://modelcontextprotocol.io/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2026.9.3-informational.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2026.10.0-informational.svg)](CHANGELOG.md)
 
 This repository is a fork of [leolilley/mailcow_mcp](https://github.com/leolilley/mailcow_mcp) (MIT, Copyright leolilley). This tree is also MIT — see [LICENSE](LICENSE).
 
@@ -67,7 +67,7 @@ Copy [`.env.example`](.env.example). Details: [docs/CONFIGURATION.md](docs/CONFI
 
 `health_check`, `get_config`, `get_mailcow_version`, `test_api_connection`
 
-`get_mailcow_version` reports this package version, the tested Mailcow release (`2026-09`), and — with an admin API key — `GET /api/v1/get/status/version`, plus a mismatch warning.
+`get_mailcow_version` reports this package version, the tested Mailcow release (`2026-10`), and — with an admin API key — `GET /api/v1/get/status/version`, plus a mismatch warning.
 
 ### Mailcow resources
 
@@ -94,7 +94,7 @@ This package uses **`YYYY.MM.PATCH`**, not a conventional `0.x` line.
 | `YYYY.MM` | Newest [mailcow-dockerized](https://github.com/mailcow/mailcow-dockerized) monthly release this build was **source-verified** against |
 | `PATCH` | MCP-only fixes or docs that do not move the Mailcow target |
 
-Mailcow tags look like `2026-09` or `2026-09a`. [npm semver](https://docs.npmjs.com/about-semantic-versioning) **rejects a leading zero** in a numeric component, so `2026.09.0` is not a valid npm version. The month is unpadded: Mailcow `2026-09` → npm **`2026.9.0`**. This build is **`2026.9.3`**.
+Mailcow tags look like `2026-10` or `2026-09a`. [npm semver](https://docs.npmjs.com/about-semantic-versioning) **rejects a leading zero** in a numeric component, so `2026.09.0` is not a valid npm version. The month is unpadded: Mailcow `2026-09` → npm **`2026.9.0`**, Mailcow `2026-10` → npm **`2026.10.0`**. This build is **`2026.10.0`**.
 
 The MCP server advertises that version in protocol `serverInfo`, in `health_check` / `get_config`, and via `get_mailcow_version`.
 
@@ -130,7 +130,7 @@ npm run format
 | [API Reference](docs/API_REFERENCE.md) | Tool parameters |
 | [Configuration](docs/CONFIGURATION.md) | Environment |
 | [Testing](docs/TESTING.md) | Test commands |
-| [COMPATIBILITY.md](COMPATIBILITY.md) | Mailcow release matrix (source-verified, not live-verified) |
+| [COMPATIBILITY.md](COMPATIBILITY.md) | Mailcow release matrix (source-verified; live reads listed) |
 | [CHANGELOG.md](CHANGELOG.md) | Released versions |
 | [CLAUDE.md](CLAUDE.md) | Session notes for agents |
 

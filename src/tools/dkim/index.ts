@@ -10,10 +10,26 @@ import {
   ToolContext,
   ToolHandlerResult,
   CreateDKIMRequest,
+  MailcowDKIM,
   ToolCategory,
   MCPErrorCode,
 } from '../../types';
 import { Logger } from '../../utils';
+
+/** Only include fields Mailcow actually returned (no epoch dates, no key_id 0). */
+function dkimListFields(key: MailcowDKIM) {
+  return {
+    domain: key.domain,
+    selector: key.selector,
+    algorithm: key.algorithm,
+    ...(typeof key.key_size === 'number' && key.key_size > 0 ? { key_size: key.key_size } : {}),
+    active: key.active,
+    public_key_preview: key.public_key ? `${key.public_key.substring(0, 50)}...` : 'N/A',
+    ...(key.created ? { created: key.created } : {}),
+    ...(key.modified ? { modified: key.modified } : {}),
+    ...(typeof key.id === 'number' && key.id > 0 ? { key_id: key.id } : {}),
+  };
+}
 
 /**
  * List all DKIM keys
@@ -154,17 +170,7 @@ export class ListDKIMKeysTool extends BaseTool {
           ed25519: keys.filter(k => k.algorithm === 'ed25519').length,
         },
         filters_applied: params,
-        keys: filteredKeys.map(key => ({
-          domain: key.domain,
-          selector: key.selector,
-          algorithm: key.algorithm,
-          key_size: key.key_size,
-          active: key.active,
-          public_key_preview: key.public_key ? `${key.public_key.substring(0, 50)}...` : 'N/A',
-          created: key.created,
-          modified: key.modified,
-          key_id: key.id,
-        })),
+        keys: filteredKeys.map(dkimListFields),
       };
 
       return {
@@ -272,18 +278,24 @@ export class GetDKIMKeyTool extends BaseTool {
         domain: keyDetails.domain,
         selector: keyDetails.selector,
         algorithm: keyDetails.algorithm,
-        key_size: keyDetails.key_size,
+        ...(typeof keyDetails.key_size === 'number' && keyDetails.key_size > 0
+          ? { key_size: keyDetails.key_size }
+          : {}),
         active: isActive,
         status: isActive ? 'Active' : 'Inactive',
         public_key: keyDetails.public_key,
         dns_record: dnsRecord,
         dns_host: `${keyDetails.selector}._domainkey.${keyDetails.domain}`,
-        timestamps: {
-          created: keyDetails.created,
-          last_modified: keyDetails.modified,
-        },
+        ...((keyDetails.created || keyDetails.modified)
+          ? {
+              timestamps: {
+                ...(keyDetails.created ? { created: keyDetails.created } : {}),
+                ...(keyDetails.modified ? { last_modified: keyDetails.modified } : {}),
+              },
+            }
+          : {}),
         validation_status: this.dkimAPI.validateDKIMKey(keyDetails) || hasMaterial ? 'Valid' : 'Invalid',
-        key_id: keyDetails.id,
+        ...(typeof keyDetails.id === 'number' && keyDetails.id > 0 ? { key_id: keyDetails.id } : {}),
       };
 
       return {
@@ -409,11 +421,15 @@ export class CreateDKIMKeyTool extends BaseTool {
           domain: createdDomain,
           selector: createdSelector,
           algorithm: createdKey.algorithm,
-          key_size: createdKey.key_size,
+          ...(typeof createdKey.key_size === 'number' && createdKey.key_size > 0
+            ? { key_size: createdKey.key_size }
+            : {}),
           active: createdKey.active,
           public_key: createdKey.public_key,
-          created: createdKey.created,
-          key_id: createdKey.id,
+          ...(createdKey.created ? { created: createdKey.created } : {}),
+          ...(typeof createdKey.id === 'number' && createdKey.id > 0
+            ? { key_id: createdKey.id }
+            : {}),
         },
         dns_configuration: {
           dns_record: dnsRecord,
@@ -562,10 +578,14 @@ export class DeleteDKIMKeyTool extends BaseTool {
           domain: keyDetails.domain,
           selector: keyDetails.selector,
           algorithm: keyDetails.algorithm,
-          key_size: keyDetails.key_size,
+          ...(typeof keyDetails.key_size === 'number' && keyDetails.key_size > 0
+            ? { key_size: keyDetails.key_size }
+            : {}),
           was_active: keyDetails.active,
           deleted_at: new Date().toISOString(),
-          key_id: keyDetails.id,
+          ...(typeof keyDetails.id === 'number' && keyDetails.id > 0
+            ? { key_id: keyDetails.id }
+            : {}),
         },
         warning: 'Emails for this domain will no longer be DKIM signed until a new key is created',
         dns_cleanup: `Remove the TXT record for ${keyDetails.selector}._domainkey.${keyDetails.domain} from your DNS configuration`,
