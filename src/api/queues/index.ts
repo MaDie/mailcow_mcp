@@ -1,6 +1,7 @@
 import { APIClient } from '../client';
 import { MailcowQueueItem, ListQueueParams, APIAction } from '../../types';
 import { buildQueueEndpoint } from '../endpoints';
+import { mailcowDeleteItems } from '../mailcow-response';
 
 export class QueuesAPI {
   constructor(private client: APIClient) {}
@@ -17,9 +18,10 @@ export class QueuesAPI {
   }
 
   async deleteQueueItems(itemIds: string[]): Promise<void> {
-    await this.client.post<void>(buildQueueEndpoint(APIAction.DELETE), {
-      items: itemIds,
-    });
+    await this.client.post<void>(
+      buildQueueEndpoint(APIAction.DELETE),
+      mailcowDeleteItems(itemIds)
+    );
   }
 
   async getQueueItemDetails(itemId: string): Promise<MailcowQueueItem> {

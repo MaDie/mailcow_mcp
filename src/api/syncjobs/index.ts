@@ -7,6 +7,7 @@ import {
 } from '../../types';
 import { APIAction } from '../../types/api';
 import { buildSyncJobEndpoint } from '../endpoints';
+import { mailcowDeleteItems } from '../mailcow-response';
 
 export class JobsAPI {
   constructor(private client: APIClient) {}
@@ -36,7 +37,7 @@ export class JobsAPI {
   async deleteSyncJob(jobId: number): Promise<void> {
     await this.client.post<void>(
       buildSyncJobEndpoint(APIAction.DELETE),
-      { id: jobId }
+      mailcowDeleteItems([jobId])
     );
   }
 

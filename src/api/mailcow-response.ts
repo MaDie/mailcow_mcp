@@ -113,6 +113,25 @@ export function asObjectList<T>(response: unknown): T[] {
   return [response as T];
 }
 
+/**
+ * Mailcow `json_api.php` assigns a JSON delete body to `$_POST['items']` and
+ * then `json_decode`s that whole value. A body of `["id"]` becomes the item
+ * list. A body of `{ items: ["id"] }` becomes `{ items: ["id"] }` and is wrong.
+ */
+export function mailcowDeleteItems(items: Array<string | number>): string[] {
+  return items.map(String);
+}
+
+/**
+ * Mailcow `json_api.php` copies only `items` and `attr` from an edit JSON body.
+ */
+export function mailcowEditBody(
+  items: Array<string | number>,
+  attr: Record<string, unknown>
+): { items: string[]; attr: Record<string, unknown> } {
+  return { items: items.map(String), attr };
+}
+
 export function assertMailcowSuccess(data: unknown): void {
   const items = extractMailcowActionItems(data);
   if (!items) {

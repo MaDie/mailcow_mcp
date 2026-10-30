@@ -12,6 +12,8 @@ import {
   findActionMessage,
   fromMailcowFlag,
   MailcowAPIError,
+  mailcowDeleteItems,
+  mailcowEditBody,
   toMailcowFlag,
 } from '../mailcow-response';
 
@@ -112,17 +114,15 @@ export class AliasAPI {
     if (updates.public_comment !== undefined) attr.public_comment = updates.public_comment;
     if (updates.private_comment !== undefined) attr.private_comment = updates.private_comment;
 
-    await this.client.post(buildAliasEndpoint(APIAction.UPDATE), {
-      items: [aliasId],
-      attr,
-    });
+    await this.client.post(buildAliasEndpoint(APIAction.UPDATE), mailcowEditBody([aliasId], attr));
     return this.getAliasDetails(aliasId);
   }
 
   async deleteAlias(aliasId: string): Promise<void> {
-    await this.client.post<void>(buildAliasEndpoint(APIAction.DELETE), {
-      items: [aliasId],
-    });
+    await this.client.post<void>(
+      buildAliasEndpoint(APIAction.DELETE),
+      mailcowDeleteItems([aliasId])
+    );
   }
 
   async getAliasDetails(aliasId: string): Promise<MailcowAlias> {

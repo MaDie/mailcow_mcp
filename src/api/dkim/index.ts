@@ -14,6 +14,7 @@ import {
 } from '../../types';
 import { buildDKIMEndpoint, buildDomainEndpoint } from '../endpoints';
 import { APIAction } from '../../types/api';
+import { mailcowDeleteItems } from '../mailcow-response';
 
 interface RawDKIM {
   id?: number;
@@ -249,10 +250,10 @@ export class DKIMAPI {
   /**
    * Delete a DKIM key
    */
-  async deleteDKIMKey(domain: string, selector: string): Promise<boolean> {
+  async deleteDKIMKey(domain: string, _selector: string): Promise<boolean> {
     const response = await this.client.post<MailcowAPIResponse | unknown>(
       buildDKIMEndpoint(APIAction.DELETE),
-      { domain, selector }
+      mailcowDeleteItems([domain])
     );
     if (response && typeof response === 'object' && 'success' in (response as MailcowAPIResponse)) {
       return Boolean((response as MailcowAPIResponse).success);

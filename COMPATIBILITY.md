@@ -8,7 +8,7 @@ This document records which [mailcow-dockerized](https://github.com/mailcow/mail
 
 | Item | Result |
 |------|--------|
-| Newest Mailcow release this build is versioned against | **2026-09** (npm package `2026.9.0`) |
+| Newest Mailcow release this build is versioned against | **2026-09** (npm package `2026.9.1`) |
 | Newest Mailcow tag whose API source was compared | **2026-10** (used routes unchanged vs 2026-09 except an unrelated `ui_theme` add) |
 | Oldest Mailcow tag whose `json_api.php` was compared | **2022-01** |
 | Minimum source-verified Mailcow for the working read/create subset | **2022-01** |
@@ -41,7 +41,7 @@ Legend:
 | Mailcow release | Status | What changes vs this MCP server |
 |-----------------|--------|----------------------------------|
 | `2026-10` | partial (source only) | Same used `json_api.php` routes as `2026-09`. Diff vs `2026-09` adds `ui_theme` only. **Not live-tested.** |
-| `2026-09` / `2026-09a` | **partial — production target** | Baseline for package version `2026.9.0`. `2026-09` source was read in full for the files listed above. `2026-09a` itself was **not** downloaded (unverified letter suffix). |
+| `2026-09` / `2026-09a` | **partial — production target** | Baseline for package version `2026.9.1`. `2026-09` source was read in full for the files listed above. `2026-09a` itself was **not** downloaded (unverified letter suffix). |
 | `2026-07` … `2026-03` | unverified | Monthly tags exist; files were not fetched. No evidence they removed the used routes. |
 | `2026-01` | partial | Same used routes as `2026-09` in `json_api.php` (domain, mailbox, alias, filter, dkim, logs, mailq, syncjob write, syncjobs read, status/version). |
 | `2025-12` … `2025-10` | unverified | Not downloaded. |
@@ -77,22 +77,22 @@ Mailcow parses `/api/v1/{action}/{category}/{object}/{extra}` in `json_api.php`.
 | `list_domains`, `test_api_connection` | `GET /api/v1/get/domain/all` | `get` / `domain` / `all` | Implemented. Not listed as that exact path in OpenAPI `2026-09`. |
 | `get_domain` | `GET /api/v1/get/domain/{id}` | `get` / `domain` / `{id}` | OpenAPI `2026-09`: `/api/v1/get/domain/{id}`. |
 | `create_domain` | `POST /api/v1/add/domain` | `add` / `domain` | Body is `attr`. OpenAPI fields include `active`, `aliases`, `defquota`, `mailboxes`, `quota`, `maxquota`. Omitted `active` becomes `intval(undefined) === 0` (inactive). **Live create result unverified.** |
-| `update_domain` | `POST /api/v1/edit/domain` with `{...updates, domain}` | `edit` / `domain` | Route exists. Payload is **not** `{ items, attr }` — see below. |
-| `delete_domain` | `POST /api/v1/delete/domain` with `{ domain }` | `delete` / `domain` | Route exists. PHP delete decodes the whole body as `items`; OpenAPI example is a bare array of names. |
+| `update_domain` | `POST /api/v1/edit/domain` with `{ items: [domain], attr }` | `edit` / `domain` | **Fixed in 2026.9.1** from `json_api.php` (edit unwraps only `items` + `attr`). Booleans sent as `"1"`/`"0"`. Live edit on `2026-09` **unverified**. |
+| `delete_domain` | `POST /api/v1/delete/domain` with `["domain"]` | `delete` / `domain` | **Fixed in 2026.9.1.** `json_api.php` decodes the whole JSON body as `items` and passes them as `domain`. OpenAPI example is a bare name array. Live delete **unverified**. |
 | `list_mailboxes` | `GET /api/v1/get/mailbox/all` | `get` / `mailbox` / `all` | Implemented. OpenAPI `2026-09` documents `/get/mailbox/all/{domain}` and `/get/mailbox/{id}` only. |
 | `get_mailbox` | `GET /api/v1/get/mailbox/{id}` | `get` / `mailbox` / `{id}` | Matches `default` object branch. |
 | `create_mailbox` | `POST /api/v1/add/mailbox` | `add` / `mailbox` | Sends `password2` (copied from `password` when omitted). `password2` exists in mailbox functions since at least `2022-01`. |
-| `update_mailbox` | `POST /api/v1/edit/mailbox` with `{...updates, mailbox}` | `edit` / `mailbox` | Route exists. Payload is **not** `{ items, attr }`. |
-| `delete_mailbox` | `POST /api/v1/delete/mailbox` with `{ mailbox }` | `delete` / `mailbox` | Route exists. Delete `items` shape likely wrong. |
+| `update_mailbox` | `POST /api/v1/edit/mailbox` with `{ items: [username], attr }` | `edit` / `mailbox` | **Fixed in 2026.9.1** from `json_api.php`. Password edits also send `password2`. Live edit **unverified**. |
+| `delete_mailbox` | `POST /api/v1/delete/mailbox` with `["user@domain"]` | `delete` / `mailbox` | **Fixed in 2026.9.1.** Whole-body-as-items; items are usernames. Independently live-confirmed by a third-party fork (mailbox delete as a JSON username array). Their code was not copied. |
 | `list_aliases` | `GET /api/v1/get/alias/all` | `get` / `alias` / `all` | Implemented. OpenAPI documents `/get/alias/{id}`. |
 | `get_alias` | `GET /api/v1/get/alias/{id}` | `get` / `alias` / `{id}` | Matches. |
 | `create_alias` | `POST /api/v1/add/alias` | `add` / `alias` | Sends `active` / `sogo_visible` as `"1"`/`"0"`. `sogo_visible` exists since at least `2022-01`. |
-| `update_alias` | `POST /api/v1/edit/alias` with `{ items, attr }` | `edit` / `alias` | Matches the JSON unwrap Mailcow expects. |
-| `delete_alias` | `POST /api/v1/delete/alias` with `{ items: [id] }` | `delete` / `alias` | Route exists. Whole-body-as-items means `$items` becomes `{ items: [id] }` rather than `[id]`. **Live result unverified.** |
+| `update_alias` | `POST /api/v1/edit/alias` with `{ items: [id], attr }` | `edit` / `alias` | Matches `json_api.php`. Independently live-confirmed by a third-party fork (alias edit `{items,attr}`). Their code was not copied. |
+| `delete_alias` | `POST /api/v1/delete/alias` with `["id"]` | `delete` / `alias` | **Fixed in 2026.9.1** (was `{ items: [id] }`, which double-wraps). Independently live-confirmed by a third-party fork (alias delete as a JSON id array). Their code was not copied. |
 | `list_sieve_filters` | `GET /api/v1/get/filters/all` or `/get/filters/{mailbox}` | `get` / `filters` | Implemented. Not in OpenAPI `2026-09` under that path. |
 | `create_sieve_filter` | `POST /api/v1/add/filter` | `add` / `filter` | Fields `username`, `script_desc`, `script_data`, `filter_type`, `active` match `functions.mailbox.inc.php` at `2026-09`. |
 | `update_sieve_filter` | `POST /api/v1/edit/filter` with `{ items, attr }` | `edit` / `filter` | Matches expected JSON shape. |
-| `delete_sieve_filter` | `POST /api/v1/delete/filter` with `{ items: [id] }` | `delete` / `filter` | Same delete-body caveat as aliases. |
+| `delete_sieve_filter` | `POST /api/v1/delete/filter` with `["id"]` | `delete` / `filter` | **Fixed in 2026.9.1.** Same whole-body-as-items pattern as alias (`id` => `$items`). Live delete **unverified**. |
 | `list_dkim_keys`, `get_dkim_key` | `GET /api/v1/get/dkim/{domain}` (after listing domains) | `get` / `dkim` / `{domain}` | Correct. Mailcow has no DKIM list route; this server walks domains. Response fields `dkim_selector`, `key_length`/`dkim_txt` (via Redis) date from at least `2022-01`. |
 | `create_dkim_key` | `POST /api/v1/add/dkim` with `{ domain, selector, key_size }` | `add` / `dkim` | Route exists. Mailcow reads `domains`, `dkim_selector`, `key_size` (same since `2022-01`). `domain` / `selector` are the wrong keys — create is expected to fail or no-op. |
 | `get_logs` and siblings | `GET /api/v1/get/logs/{type}/{count}` | `get` / `logs` / `{type}` | Types this server maps: `postfix`, `dovecot`, `rspamd-history`, `sogo`, `api`, `acme`, `netfilter`, `watchdog`, `autodiscover`, `ratelimited`. All of those cases exist from `2022-01`. `cron` exists from `2025-03` and is unused. |
@@ -113,14 +113,14 @@ Mailcow parses `/api/v1/{action}/{category}/{object}/{extra}` in `json_api.php`.
 | `list_sync_jobs`, `get_sync_job` | `GET /api/v1/get/syncjob` | GET category is **`syncjobs`** (plural). Documented path: `/api/v1/get/syncjobs/all/no_log`. Singular `/get/syncjob` hits the GET default 404. | Same on every compared tag. |
 | `create_sync_job` | `POST /api/v1/add/syncjob` with `{ host, port, user, password, encryption, … }` | Route exists (`add` / `syncjob`). Mailcow fields are `host1`, `port1`, `user1`, `password1`, `enc1`, `mins_interval`, `username`, … (OpenAPI `2026-09` and add-example in `json_api` log). Our names do not match. | Same field names at `2026-09`; earlier OpenAPI examples were **not** fully diffed (**unverified** whether `host1` existed under another name before `2022-01`). |
 | `update_sync_job`, `activate_sync_job`, `deactivate_sync_job` | `POST /api/v1/edit/syncjob` with `{ ...updates, id }` | Route exists. Edit JSON must be `{ items, attr }`. `active` must be `"1"`/`"0"` for `intval`. | All compared tags. |
-| `delete_sync_job` | `POST /api/v1/delete/syncjob` with `{ id }` | Route exists. Delete body should be the id list Mailcow decodes as `items`. | All compared tags. |
+| `delete_sync_job` | `POST /api/v1/delete/syncjob` with `[id]` | **Fixed in 2026.9.1** (`json_api.php` `delete` / `syncjob` → `id` => `$items`). Create/update field names and GET path are still wrong. | All compared tags. |
 | `list_queue_items`, `get_queue_item` | `GET /api/v1/get/mailq` | GET `mailq` only handles `object === "all"`. Documented: `/api/v1/get/mailq/all`. Bare `/get/mailq` does not enter `case "all"` and returns no list. | All compared tags. |
 | `flush_queue` | `POST /api/v1/edit/mailq` with `{}` | `mailq('edit')` requires `attr.action` in `flush` / `super_delete`. OpenAPI example is `{ action: flush }` (top-level). PHP JSON unwrap only copies `attr`/`items`. **Which shape works live is unverified.** Our empty body matches neither. | All compared tags. |
 | `hold_queue_item` | `POST /api/v1/edit/mailq` with `{ action: hold, items }` | Same unwrap. Mailcow accepts `action` in `{hold, unhold, deliver}` *after* merge of `qid` + `attr`. |
 | `release_queue_item` | `{ action: release, items }` | Mailcow action name is **`unhold`**, not `release`. |
-| `delete_queue_items` | `POST /api/v1/delete/mailq` with `{ items }` | Route exists (`delete` / `mailq` → `qid`). Same whole-body-as-items caveat. |
+| `delete_queue_items` | `POST /api/v1/delete/mailq` with `[qid, …]` | **Fixed in 2026.9.1** (`delete` / `mailq` → `qid` => `$items`). GET `/mailq` without `/all` and edit action names are still wrong. |
 | `update_dkim_key` (and activate/deactivate helpers) | `POST /api/v1/edit/dkim` | **No `case "dkim"` under `edit`** on any compared tag. HTTP 404 `route not found`. DKIM is add / delete / get only. | Never present. |
-| `delete_dkim_key` | `POST /api/v1/delete/dkim` with `{ domain, selector }` | Route exists. Handler uses `domains` from `items`, not `domain`+`selector`. | All compared tags. |
+| `delete_dkim_key` | `POST /api/v1/delete/dkim` with `[domain]` | **Fixed in 2026.9.1** (`delete` / `dkim` → `domains` => `$items`). Selector is unused by Mailcow delete. Create field names and `/edit/dkim` are still wrong. | All compared tags. |
 
 ## Fields that appeared, changed, or were removed
 
@@ -150,15 +150,13 @@ These are expected to break against production Mailcow `2026-09` for the reasons
 |-------|-----|
 | `list_users`, `get_user`, `create_user`, `update_user`, `delete_user` | `/user` is not a Mailcow API category. Use mailbox tools. |
 | `list_sync_jobs`, `get_sync_job` | Wrong GET path (`/get/syncjob` vs `/get/syncjobs/all/no_log`). |
-| `create_sync_job`, `update_sync_job`, `delete_sync_job`, `activate_sync_job`, `deactivate_sync_job` | Wrong field names and/or missing `{ items, attr }`. |
+| `create_sync_job`, `update_sync_job`, `activate_sync_job`, `deactivate_sync_job` | Wrong field names and/or missing `{ items, attr }` on edit. `delete_sync_job` now sends `[id]`. |
 | `list_queue_items`, `get_queue_item` | Missing `/all` on `/get/mailq`. |
 | `flush_queue`, `hold_queue_item`, `release_queue_item` | Edit payload / action name (`release` vs `unhold`) does not match `mailq()`. |
 | `update_dkim_key` | `/edit/dkim` does not exist. |
 | `create_dkim_key` | Sends `domain`/`selector` instead of `domains`/`dkim_selector`. |
-| `update_domain`, `update_mailbox` | Edit JSON is not `{ items, attr }`. |
-| `delete_domain`, `delete_mailbox`, `delete_dkim_key` | Delete JSON is not the item list Mailcow decodes from the raw body. |
 
-Domain/mailbox/alias **list, get, and create** (alias create after the `active` flag fix) are the subset whose routes *and* primary field names match Mailcow on every compared tag, including `2026-09`. Sieve list/create/update match as well, aside from the delete-body caveat. Logs match. **Live success on `2026-09` remains unverified.**
+Domain/mailbox/alias **list, get, create, edit, and delete** now match the `json_api.php` write shapes (edit `{items,attr}`, delete a plain item array). Sieve list/create/update/delete match as well. Logs match. **Live success on production `2026-09` remains unverified** except where a third-party fork reported a live Mailcow test of mailbox/alias delete and alias edit (their implementation was not copied).
 
 ## Unused modules (not compatibility-tested)
 
@@ -166,4 +164,4 @@ Domain/mailbox/alias **list, get, and create** (alias create after the `active` 
 
 ## Versioning
 
-See [README](README.md#versioning) and [CHANGELOG.md](CHANGELOG.md). Package version `YYYY.MM.PATCH` names the Mailcow `YYYY-MM` release this tree was source-verified against. `2026.9.0` means Mailcow `2026-09` (npm semver cannot encode `2026.09.0`).
+See [README](README.md#versioning) and [CHANGELOG.md](CHANGELOG.md). Package version `YYYY.MM.PATCH` names the Mailcow `YYYY-MM` release this tree was source-verified against. `2026.9.1` is an MCP-only PATCH on the `2026-09` target (npm semver cannot encode `2026.09.0`).
