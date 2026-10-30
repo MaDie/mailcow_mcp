@@ -43,20 +43,11 @@ export const API_ENDPOINTS = {
     DELETE: '/api/v1/delete/filter',
   },
 
-  // User endpoints
-  USERS: {
-    LIST: '/api/v1/get/user',
-    CREATE: '/api/v1/add/user',
-    UPDATE: '/api/v1/edit/user',
-    DELETE: '/api/v1/delete/user',
-  },
-
-  // DKIM endpoints
+  // DKIM endpoints (add / get / delete only — there is no edit/dkim)
   DKIM: {
     LIST: '/api/v1/get/dkim',
     GET: '/api/v1/get/dkim',
     CREATE: '/api/v1/add/dkim',
-    UPDATE: '/api/v1/edit/dkim',
     DELETE: '/api/v1/delete/dkim',
   },
 
@@ -104,6 +95,11 @@ export const API_ENDPOINTS = {
     BACKUP_CREATE: '/api/v1/add/system/backup',
   },
 
+  // Host status (admin-only). Version exists from Mailcow 2022-05 (PR 4557).
+  STATUS: {
+    VERSION: '/api/v1/get/status/version',
+  },
+
   // Resource endpoints
   RESOURCES: {
     SERVICES: '/api/v1/get/services',
@@ -127,21 +123,21 @@ export const API_ENDPOINTS = {
     UPDATE: '/api/v1/edit/backup',
   },
 
-  // Jobs endpoints (sync jobs)
+  // Jobs endpoints (GET category is plural `syncjobs`; writes stay `syncjob`)
   SYNCJOBS: {
-    LIST: '/api/v1/get/syncjob',
+    LIST: '/api/v1/get/syncjobs/all/no_log',
+    GET: '/api/v1/get/syncjobs',
     CREATE: '/api/v1/add/syncjob',
     UPDATE: '/api/v1/edit/syncjob',
     DELETE: '/api/v1/delete/syncjob',
-    GET: '/api/v1/get/syncjob',
   },
 
-  // Queue endpoints (mail queue)
+  // Queue endpoints (GET mailq only handles object === "all")
   QUEUE: {
-    LIST: '/api/v1/get/mailq',
+    LIST: '/api/v1/get/mailq/all',
+    GET: '/api/v1/get/mailq/all',
     FLUSH: '/api/v1/edit/mailq',
     DELETE: '/api/v1/delete/mailq',
-    GET: '/api/v1/get/mailq',
     HOLD: '/api/v1/edit/mailq',
     RELEASE: '/api/v1/edit/mailq',
   },
@@ -236,35 +232,8 @@ export function buildFilterEndpoint(
   }
 }
 
-export function buildUserEndpoint(
-  action:
-    | APIAction.LIST
-    | APIAction.CREATE
-    | APIAction.UPDATE
-    | APIAction.DELETE
-    | APIAction.GET
-): string {
-  switch (action) {
-    case APIAction.LIST:
-      return API_ENDPOINTS.USERS.LIST;
-    case APIAction.CREATE:
-      return API_ENDPOINTS.USERS.CREATE;
-    case APIAction.UPDATE:
-      return API_ENDPOINTS.USERS.UPDATE;
-    case APIAction.DELETE:
-      return API_ENDPOINTS.USERS.DELETE;
-    default:
-      throw new Error(`Unknown user action: ${action}`);
-  }
-}
-
 export function buildDKIMEndpoint(
-  action:
-    | APIAction.LIST
-    | APIAction.GET
-    | APIAction.CREATE
-    | APIAction.UPDATE
-    | APIAction.DELETE,
+  action: APIAction.LIST | APIAction.GET | APIAction.CREATE | APIAction.DELETE,
   resourceId?: string
 ): string {
   switch (action) {
@@ -274,8 +243,6 @@ export function buildDKIMEndpoint(
       return withResource(API_ENDPOINTS.DKIM.GET, resourceId);
     case APIAction.CREATE:
       return API_ENDPOINTS.DKIM.CREATE;
-    case APIAction.UPDATE:
-      return API_ENDPOINTS.DKIM.UPDATE;
     case APIAction.DELETE:
       return API_ENDPOINTS.DKIM.DELETE;
     default:
@@ -387,7 +354,8 @@ export function buildSyncJobEndpoint(
     | APIAction.CREATE
     | APIAction.UPDATE
     | APIAction.DELETE
-    | APIAction.GET
+    | APIAction.GET,
+  resourceId?: string
 ): string {
   switch (action) {
     case APIAction.LIST:
@@ -399,7 +367,10 @@ export function buildSyncJobEndpoint(
     case APIAction.DELETE:
       return API_ENDPOINTS.SYNCJOBS.DELETE;
     case APIAction.GET:
-      return API_ENDPOINTS.SYNCJOBS.GET;
+      // json_api.php GET syncjobs: object "all" or a mailbox username.
+      return resourceId
+        ? `${API_ENDPOINTS.SYNCJOBS.GET}/${encodeURIComponent(resourceId)}/no_log`
+        : API_ENDPOINTS.SYNCJOBS.LIST;
     default:
       throw new Error(`Unknown job action: ${action}`);
   }

@@ -44,6 +44,20 @@ describe('DomainAPI', () => {
     expect(created.domain_name).toBe('new.com');
   });
 
+  it('edits a domain with items/attr and deletes with a plain id array', async () => {
+    client.post.mockResolvedValue([{ type: 'success', msg: ['domain_modified'] }]);
+    client.get.mockResolvedValue({ domain_name: 'example.com', active: 0 });
+
+    await api.updateDomain('example.com', { description: 'Updated', active: false });
+    expect(client.post).toHaveBeenCalledWith('/api/v1/edit/domain', {
+      items: ['example.com'],
+      attr: { description: 'Updated', active: '0' },
+    });
+
+    await api.deleteDomain('example.com');
+    expect(client.post).toHaveBeenCalledWith('/api/v1/delete/domain', ['example.com']);
+  });
+
   it('does not treat a danger create response as success', async () => {
     client.post.mockRejectedValue(
       new MailcowAPIError('Mailcow API error: domain_invalid', [

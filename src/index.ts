@@ -25,8 +25,6 @@ import { DomainTools } from './tools/domains/index.js';
 import { DomainAPI } from './api/domains/index.js';
 import { MailboxTools } from './tools/mailboxes/index.js';
 import { MailboxAPI } from './api/mailboxes/index.js';
-import { UserTools } from './tools/users/index.js';
-import { UsersAPI } from './api/users/index.js';
 import { DKIMTools } from './tools/dkim/index.js';
 import { DKIMAPI } from './api/dkim/index.js';
 import { QueueTools } from './tools/queues/index.js';
@@ -41,6 +39,12 @@ import { AliasAPI } from './api/aliases/index.js';
 import { SieveFilterTools } from './tools/filters/index.js';
 import { FilterAPI } from './api/filters/index.js';
 import { BaseTool } from './tools/base.js';
+import { StatusAPI, MailcowVersionStatus } from './api/status.js';
+import {
+  MCP_PACKAGE_NAME,
+  MCP_PACKAGE_VERSION,
+  mcpVersionInfo,
+} from './version.js';
 
 /**
  * Main MCP Server class
@@ -57,8 +61,14 @@ class MailcowMCPServer {
     // Initialize MCP Server
     this.server = new Server(
       {
-        name: 'mailcow-mcp',
-        version: '0.1.0',
+        name: MCP_PACKAGE_NAME,
+        version: MCP_PACKAGE_VERSION,
+      },
+      {
+        capabilities: {
+          tools: {},
+          logging: {},
+        },
       }
     );
 
@@ -232,7 +242,6 @@ class MailcowMCPServer {
         'dkim:read', 'dkim:write', 'dkim:delete',
         'aliases:read', 'aliases:write', 'aliases:delete',
         'filters:read', 'filters:write', 'filters:delete',
-        'users:read', 'users:write', 'users:delete',
         // Email permissions
         'email:send', 'email:read'
       ], // Based on API key capabilities
@@ -282,8 +291,7 @@ class MailcowMCPServer {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         server: {
-          name: 'mailcow-mcp',
-          version: '0.1.0',
+          ...mcpVersionInfo(),
           uptime: process.uptime(),
         },
         api: {
@@ -329,6 +337,7 @@ class MailcowMCPServer {
         },
         server: config.server,
         logging: config.logging,
+        versioning: mcpVersionInfo(),
       };
 
       return {
@@ -337,6 +346,47 @@ class MailcowMCPServer {
           content: [{
             type: 'text',
             text: JSON.stringify(sanitizedConfig, null, 2),
+          }],
+        },
+      };
+    });
+
+    this.toolRegistry.register({
+      name: 'get_mailcow_version',
+      description:
+        'Report this MCP server version, the Mailcow release it was source-verified against, and (when an admin API key is configured) the connected instance version from GET /api/v1/get/status/version. Warns when they differ.',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+        required: [],
+      },
+    });
+
+    this.toolRegistry.registerHandler('get_mailcow_version', async (_input, _context) => {
+      const mcp = mcpVersionInfo();
+      let connected: MailcowVersionStatus = {
+        reachable: false,
+        version: null,
+        raw: null,
+        matches_tested: null,
+        warning:
+          'No Mailcow API client is configured. Only the MCP package version is available.',
+      };
+
+      if (this.apiClient) {
+        connected = await new StatusAPI(this.apiClient).getVersion();
+      }
+
+      return {
+        success: true,
+        result: {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              mcp,
+              connected_mailcow: connected,
+              compatible: connected.matches_tested,
+            }, null, 2),
           }],
         },
       };
@@ -402,9 +452,6 @@ class MailcowMCPServer {
     
     // Register mailbox tools
     await this.registerMailboxTools();
-    
-    // Register user tools
-    await this.registerUserTools();
     
     // Register DKIM tools
     await this.registerDKIMTools();
@@ -493,30 +540,6 @@ class MailcowMCPServer {
   }
 
   /**
-   * Register user management tools
-   */
-  private async registerUserTools(): Promise<void> {
-    if (!this.apiClient) {
-      this.logger.warn('API client not available - skipping user tools registration');
-      return;
-    }
-
-    try {
-      const usersAPI = new UsersAPI(this.apiClient);
-      this.registerManagedTools('User tools', [
-        new UserTools.ListUsersTool(this.logger, usersAPI),
-        new UserTools.GetUserTool(this.logger, usersAPI),
-        new UserTools.CreateUserTool(this.logger, usersAPI),
-        new UserTools.UpdateUserTool(this.logger, usersAPI),
-        new UserTools.DeleteUserTool(this.logger, usersAPI),
-      ]);
-    } catch (error) {
-      this.logger.error('Failed to register user tools', error);
-      throw error;
-    }
-  }
-
-  /**
    * Register DKIM management tools
    */
   private async registerDKIMTools(): Promise<void> {
@@ -531,7 +554,6 @@ class MailcowMCPServer {
         new DKIMTools.ListDKIMKeysTool(this.logger, dkimAPI),
         new DKIMTools.GetDKIMKeyTool(this.logger, dkimAPI),
         new DKIMTools.CreateDKIMKeyTool(this.logger, dkimAPI),
-        new DKIMTools.UpdateDKIMKeyTool(this.logger, dkimAPI),
         new DKIMTools.DeleteDKIMKeyTool(this.logger, dkimAPI),
       ]);
     } catch (error) {

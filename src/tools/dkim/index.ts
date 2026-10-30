@@ -10,7 +10,6 @@ import {
   ToolContext,
   ToolHandlerResult,
   CreateDKIMRequest,
-  UpdateDKIMRequest,
   ToolCategory,
   MCPErrorCode,
 } from '../../types';
@@ -302,7 +301,8 @@ export class GetDKIMKeyTool extends BaseTool {
  */
 export class CreateDKIMKeyTool extends BaseTool {
   readonly name = 'create_dkim_key';
-  readonly description = 'Create a new DKIM key for a domain in the Mailcow server';
+  readonly description =
+    'Create a new DKIM key for a domain. Mailcow has no /edit/dkim route — replace a key by delete_dkim_key then create_dkim_key.';
   readonly inputSchema = {
     type: 'object' as const,
     properties: {
@@ -433,164 +433,12 @@ export class CreateDKIMKeyTool extends BaseTool {
 }
 
 /**
- * Update an existing DKIM key
- */
-export class UpdateDKIMKeyTool extends BaseTool {
-  readonly name = 'update_dkim_key';
-  readonly description = 'Update settings for an existing DKIM key';
-  readonly inputSchema = {
-    type: 'object' as const,
-    properties: {
-      domain: {
-        type: 'string' as const,
-        description: 'Domain of the DKIM key to update',
-        pattern: '^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9](?:\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$',
-      },
-      selector: {
-        type: 'string' as const,
-        description: 'Selector of the DKIM key to update',
-        pattern: '^[a-zA-Z0-9._-]+$',
-        maxLength: 63,
-      },
-      active: {
-        type: 'boolean' as const,
-        description: 'Whether the DKIM key should be active',
-      },
-      key_size: {
-        type: 'number' as const,
-        description: 'Updated key size in bits',
-        minimum: 1024,
-        maximum: 4096,
-      },
-      algorithm: {
-        type: 'string' as const,
-        description: 'Updated algorithm for the DKIM key',
-        enum: ['rsa', 'ed25519'],
-      },
-    },
-    required: ['domain', 'selector'],
-    additionalProperties: false,
-  };
-
-  constructor(logger: Logger, private dkimAPI: DKIMAPI) {
-    super(logger, {
-      category: ToolCategory.DOMAIN,
-      version: '1.0.0',
-      requiresAuth: true,
-      rateLimited: true,
-    });
-  }
-
-  async execute(input: ToolInput, context: ToolContext): Promise<ToolHandlerResult> {
-    try {
-      this.logExecution(input, context, true);
-
-      // Validate permissions
-      if (!this.validatePermissions(context, ['dkim:write', 'domains:write', 'write'])) {
-        return {
-          success: false,
-          error: {
-            code: MCPErrorCode.AUTHORIZATION_ERROR,
-            message: 'Permission denied: requires dkim:write permission',
-          },
-        };
-      }
-
-      // Validate input
-      const validation = this.validateInput(input);
-      if (!validation.valid) {
-        return {
-          success: false,
-          error: {
-            code: MCPErrorCode.INVALID_PARAMS,
-            message: `Input validation failed: ${validation.errors.map(e => e.message).join(', ')}`,
-          },
-        };
-      }
-
-      const { domain, selector, active, key_size, algorithm } = input;
-
-      if (typeof domain !== 'string' || typeof selector !== 'string') {
-        return {
-          success: false,
-          error: {
-            code: MCPErrorCode.INVALID_PARAMS,
-            message: 'Domain and selector must be strings',
-          },
-        };
-      }
-
-      // Check if DKIM key exists
-      const existingKey = await this.dkimAPI.getDKIMKey(domain, selector);
-      if (!existingKey) {
-        return {
-          success: false,
-          error: {
-            code: MCPErrorCode.RESOURCE_NOT_FOUND,
-            message: `DKIM key for domain '${domain}' with selector '${selector}' not found`,
-          },
-        };
-      }
-
-      // Build update request (only include provided fields)
-      const updateRequest: UpdateDKIMRequest = {};
-      if (active !== undefined && typeof active === 'boolean') updateRequest.active = active;
-      if (key_size !== undefined && typeof key_size === 'number') updateRequest.key_size = key_size;
-      if (algorithm !== undefined && typeof algorithm === 'string') updateRequest.algorithm = algorithm as 'rsa' | 'ed25519';
-
-      // Check if there are any updates to apply
-      if (Object.keys(updateRequest).length === 0) {
-        return {
-          success: false,
-          error: {
-            code: MCPErrorCode.INVALID_PARAMS,
-            message: 'No update parameters provided',
-          },
-        };
-      }
-
-      // Update DKIM key
-      const updatedKey = await this.dkimAPI.updateDKIMKey(domain, selector, updateRequest);
-
-      // Generate DNS record for the updated key
-      const dnsRecord = this.dkimAPI.generateDKIMDNSRecord(updatedKey);
-
-      const result = {
-        message: `DKIM key for domain '${updatedKey.domain}' with selector '${updatedKey.selector}' updated successfully`,
-        dkim_key: {
-          domain: updatedKey.domain,
-          selector: updatedKey.selector,
-          algorithm: updatedKey.algorithm,
-          key_size: updatedKey.key_size,
-          active: updatedKey.active,
-          status: updatedKey.active ? 'Active' : 'Inactive',
-          public_key: updatedKey.public_key,
-          last_modified: updatedKey.modified,
-          key_id: updatedKey.id,
-        },
-        dns_configuration: {
-          dns_record: dnsRecord,
-          host: `${updatedKey.selector}._domainkey.${updatedKey.domain}`,
-        },
-        updated_fields: Object.keys(updateRequest),
-      };
-
-      return {
-        success: true,
-        result: ToolUtils.createJsonResult(result),
-      };
-    } catch (error) {
-      return this.handleError(error as Error, context);
-    }
-  }
-}
-
-/**
  * Delete a DKIM key
  */
 export class DeleteDKIMKeyTool extends BaseTool {
   readonly name = 'delete_dkim_key';
-  readonly description = 'Delete a DKIM key from the Mailcow server (WARNING: This will affect email signing!)';
+  readonly description =
+    'Delete a DKIM key (WARNING: this stops DKIM signing). Mailcow has no /edit/dkim — create a new key afterwards to rotate.';
   readonly inputSchema = {
     type: 'object' as const,
     properties: {
@@ -738,6 +586,5 @@ export const DKIMTools = {
   ListDKIMKeysTool,
   GetDKIMKeyTool,
   CreateDKIMKeyTool,
-  UpdateDKIMKeyTool,
   DeleteDKIMKeyTool,
 };

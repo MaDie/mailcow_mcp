@@ -1,0 +1,59 @@
+# Optional release helper: create an annotated git tag that matches
+# package.json (YYYY.MM.PATCH, e.g. v2026.9.0 for Mailcow 2026-09).
+#
+# Does not publish to npm. Run manually after the version bump is on the
+# default branch, or dry-run to print the tag name only.
+
+name: Tag release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Print the tag that would be created without pushing
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: ver
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TESTED=$(node -e "const fs=require('fs');const t=fs.readFileSync('src/version.ts','utf8');const m=t.match(/TESTED_MAILCOW_RELEASE = '([^']+)'/);if(!m){process.exit(1)};process.stdout.write(m[1])")
+          PACKAGED=$(node -e "const fs=require('fs');const t=fs.readFileSync('src/version.ts','utf8');const m=t.match(/MCP_PACKAGE_VERSION = '([^']+)'/);if(!m){process.exit(1)};process.stdout.write(m[1])")
+          if [ "$VERSION" != "$PACKAGED" ]; then
+            echo "package.json version ($VERSION) != src/version.ts MCP_PACKAGE_VERSION ($PACKAGED)"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tested=$TESTED" >> "$GITHUB_OUTPUT"
+          echo "Would tag v$VERSION (tested Mailcow $TESTED)"
+
+      - name: Create and push tag
+        if: ${{ inputs.dry_run != true }}
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          TESTED: ${{ steps.ver.outputs.tested }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+            exit 0
+          fi
+          git tag -a "$TAG" -m "mailcow-mcp $VERSION (Mailcow $TESTED)"
+          git push origin "$TAG"

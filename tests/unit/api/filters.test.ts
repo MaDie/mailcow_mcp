@@ -67,6 +67,34 @@ describe('FilterAPI', () => {
     expect(created.id).toBe(9);
   });
 
+  it('edits a filter with items/attr and deletes with a plain id array', async () => {
+    client.get.mockResolvedValue([
+      {
+        id: 9,
+        username: 'user@example.com',
+        script_desc: 'Mine',
+        script_data: 'keep;',
+        filter_type: 'prefilter',
+        active: '1',
+      },
+    ]);
+    client.post.mockResolvedValue([{ type: 'success', msg: ['mailbox_modified'] }]);
+
+    await api.updateFilter('9', { script_desc: 'Renamed', active: false });
+    expect(client.post).toHaveBeenCalledWith('/api/v1/edit/filter', {
+      items: ['9'],
+      attr: {
+        script_desc: 'Renamed',
+        script_data: 'keep;',
+        filter_type: 'prefilter',
+        active: '0',
+      },
+    });
+
+    await api.deleteFilter('9');
+    expect(client.post).toHaveBeenCalledWith('/api/v1/delete/filter', ['9']);
+  });
+
   it('fails create when the filter is missing after a success response', async () => {
     client.post.mockResolvedValue([{ type: 'success', msg: ['mailbox_modified'] }]);
     client.get.mockResolvedValue([]);

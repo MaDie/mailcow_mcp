@@ -7,6 +7,7 @@ import {
   APIAction,
 } from '../../types';
 import { buildMailboxEndpoint } from '../endpoints';
+import { mailcowDeleteItems, mailcowEditBody, toMailcowFlag } from '../mailcow-response';
 
 function asMailboxList(response: unknown): MailcowMailbox[] {
   if (Array.isArray(response)) {
@@ -58,22 +59,26 @@ export class MailboxAPI {
   }
 
   async updateMailbox(mailboxId: string, updates: UpdateMailboxRequest): Promise<MailcowMailbox> {
-    const payload = {
-      ...updates,
-      mailbox: mailboxId,
-      ...(updates.password ? { password2: updates.password } : {}),
-    };
+    const attr: Record<string, unknown> = {};
+    if (updates.quota !== undefined) attr.quota = updates.quota;
+    if (updates.name !== undefined) attr.name = updates.name;
+    if (updates.active !== undefined) attr.active = toMailcowFlag(updates.active);
+    if (updates.password !== undefined) {
+      attr.password = updates.password;
+      attr.password2 = updates.password;
+    }
     await this.client.post(
       buildMailboxEndpoint(APIAction.UPDATE),
-      payload
+      mailcowEditBody([mailboxId], attr)
     );
     return this.getMailboxDetails(mailboxId);
   }
 
   async deleteMailbox(mailboxId: string): Promise<void> {
-    await this.client.post<void>(buildMailboxEndpoint(APIAction.DELETE), {
-      mailbox: mailboxId,
-    });
+    await this.client.post<void>(
+      buildMailboxEndpoint(APIAction.DELETE),
+      mailcowDeleteItems([mailboxId])
+    );
   }
 
   async getMailboxDetails(mailboxId: string): Promise<MailcowMailbox> {

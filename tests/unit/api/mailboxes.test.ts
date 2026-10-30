@@ -52,6 +52,37 @@ describe('MailboxAPI', () => {
     expect(created.username).toBe('info@example.com');
   });
 
+  it('edits a mailbox with items/attr and deletes with a plain username array', async () => {
+    client.post.mockResolvedValue([{ type: 'success', msg: ['mailbox_modified'] }]);
+    client.get.mockResolvedValue({
+      username: 'info@example.com',
+      domain: 'example.com',
+      local_part: 'info',
+    });
+
+    await api.updateMailbox('info@example.com', {
+      quota: 2048,
+      name: 'Info',
+      active: false,
+      password: 'new-secret',
+    });
+    expect(client.post).toHaveBeenCalledWith('/api/v1/edit/mailbox', {
+      items: ['info@example.com'],
+      attr: {
+        quota: 2048,
+        name: 'Info',
+        active: '0',
+        password: 'new-secret',
+        password2: 'new-secret',
+      },
+    });
+
+    await api.deleteMailbox('info@example.com');
+    expect(client.post).toHaveBeenCalledWith('/api/v1/delete/mailbox', [
+      'info@example.com',
+    ]);
+  });
+
   it('throws when Mailcow reports type danger instead of claiming success', async () => {
     client.post.mockRejectedValue(
       new MailcowAPIError('Mailcow API error: mailbox_invalid: info@example.com', [

@@ -487,7 +487,7 @@ export class DeleteQueueItemsTool extends BaseTool {
             subject: item.subject,
             status: item.status,
           });
-        } catch (error) {
+        } catch (_error) {
           // Item might not exist - continue with deletion attempt
           itemDetails.push({
             id: itemId,
@@ -618,17 +618,22 @@ export class HoldQueueItemTool extends BaseTool {
  */
 export class ReleaseQueueItemTool extends BaseTool {
   readonly name = 'release_queue_item';
-  readonly description = 'Release a specific queue item from hold (allow delivery attempts)';
+  readonly description =
+    'Release a held queue item (Mailcow action unhold). Destructive: requires confirm.';
   readonly inputSchema = {
     type: 'object' as const,
     properties: {
       item_id: {
         type: 'string' as const,
-        description: 'ID of the queue item to release',
+        description: 'ID of the queue item to release (unhold)',
         minLength: 1,
       },
+      confirm: {
+        type: 'boolean' as const,
+        description: 'Confirmation that you want to unhold this queue item',
+      },
     },
-    required: ['item_id'],
+    required: ['item_id', 'confirm'],
     additionalProperties: false,
   };
 
@@ -668,7 +673,7 @@ export class ReleaseQueueItemTool extends BaseTool {
         };
       }
 
-      const { item_id } = input;
+      const { item_id, confirm } = input;
 
       if (typeof item_id !== 'string') {
         return {
@@ -680,10 +685,20 @@ export class ReleaseQueueItemTool extends BaseTool {
         };
       }
 
+      if (confirm !== true) {
+        return {
+          success: false,
+          error: {
+            code: MCPErrorCode.INVALID_PARAMS,
+            message: 'Queue item release requires explicit confirmation (confirm: true)',
+          },
+        };
+      }
+
       // Get item details before releasing
       const itemDetails = await this.queuesAPI.getQueueItemDetails(item_id);
       
-      // Release queue item
+      // Release queue item (Mailcow unhold)
       await this.queuesAPI.releaseQueueItem(item_id);
 
       const result = {

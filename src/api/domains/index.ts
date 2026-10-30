@@ -7,6 +7,7 @@ import {
   APIAction,
 } from '../../types';
 import { buildDomainEndpoint } from '../endpoints';
+import { mailcowDeleteItems, mailcowEditBody, toMailcowFlag } from '../mailcow-response';
 
 function asDomainList(response: unknown): MailcowDomain[] {
   if (Array.isArray(response)) {
@@ -58,18 +59,27 @@ export class DomainAPI {
   }
 
   async updateDomain(domainId: string, updates: UpdateDomainRequest): Promise<MailcowDomain> {
-    const payload = { ...updates, domain: domainId };
+    const attr: Record<string, unknown> = {};
+    if (updates.description !== undefined) attr.description = updates.description;
+    if (updates.active !== undefined) attr.active = toMailcowFlag(updates.active);
+    if (updates.quota !== undefined) attr.quota = updates.quota;
+    if (updates.maxquota !== undefined) attr.maxquota = updates.maxquota;
+    if (updates.relayhost !== undefined) attr.relayhost = updates.relayhost;
+    if (updates.relay_all_recipients !== undefined) {
+      attr.relay_all_recipients = toMailcowFlag(updates.relay_all_recipients);
+    }
     await this.client.post(
       buildDomainEndpoint(APIAction.UPDATE),
-      payload
+      mailcowEditBody([domainId], attr)
     );
     return this.getDomainDetails(domainId);
   }
 
   async deleteDomain(domainId: string): Promise<void> {
-    await this.client.post<void>(buildDomainEndpoint(APIAction.DELETE), {
-      domain: domainId,
-    });
+    await this.client.post<void>(
+      buildDomainEndpoint(APIAction.DELETE),
+      mailcowDeleteItems([domainId])
+    );
   }
 
   async getDomainDetails(domainId: string): Promise<MailcowDomain> {

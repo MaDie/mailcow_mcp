@@ -2,9 +2,9 @@
 
 Complete reference for all MCP tools and their usage patterns.
 
-## 🛠️ Available Tools (20 total)
+## 🛠️ Available Tools
 
-### System Tools (3 tools)
+### System Tools (4 tools)
 
 #### `health_check`
 Get server health status and basic metrics.
@@ -18,7 +18,9 @@ Get server health status and basic metrics.
   "timestamp": "2023-12-07T10:30:00.000Z",
   "server": {
     "name": "mailcow-mcp",
-    "version": "0.1.0",
+    "version": "2026.9.3",
+    "versioning_scheme": "YYYY.MM.PATCH",
+    "tested_mailcow": "2026-09",
     "uptime": 3600
   },
   "api": {
@@ -54,6 +56,32 @@ Get current server configuration (sanitized, no secrets).
   }
 }
 ```
+
+#### `get_mailcow_version`
+Report this MCP package version, the Mailcow release it was source-verified against, and the connected instance version.
+
+**Parameters:** None
+
+**Returns:**
+```json
+{
+  "mcp": {
+    "name": "mailcow-mcp",
+    "version": "2026.9.3",
+    "versioning_scheme": "YYYY.MM.PATCH",
+    "tested_mailcow": "2026-09"
+  },
+  "connected_mailcow": {
+    "reachable": true,
+    "version": "2026-09",
+    "matches_tested": true,
+    "warning": null
+  },
+  "compatible": true
+}
+```
+
+Calls `GET /api/v1/get/status/version` (Mailcow ≥ 2022-05, admin API key). Warns when the connected `YYYY-MM` does not match `tested_mailcow`. See [COMPATIBILITY.md](../COMPATIBILITY.md).
 
 #### `test_api_connection` 
 Test connectivity to the Mailcow API server.
@@ -263,10 +291,11 @@ Put a queue item on hold (prevent delivery attempts).
 - `item_id` (string, required): Queue item ID
 
 #### `release_queue_item`
-Release a queue item from hold (allow delivery attempts).
+Release a held queue item (Mailcow action `unhold`). Requires confirmation.
 
 **Parameters:**
 - `item_id` (string, required): Queue item ID
+- `confirm` (boolean, required): Must be `true` to confirm
 
 ---
 
